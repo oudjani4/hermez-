@@ -21,7 +21,8 @@ bot.start(async (ctx) => {
     const result = await referrals.registerReferral(userId, referrerId);
     if (result.ok) {
       await mining.getState(referrerId); // تأكد للمُحيل حساب تعدين موجود
-      await bot.telegram.sendMessage(referrerId, `🎉 إحالة جديدة! +${result.reward}`);
+      const newBalance = await mining.addBalance(referrerId, result.reward);
+      await bot.telegram.sendMessage(referrerId, `🎉 إحالة جديدة! +${result.reward} — رصيدك الآن: ${newBalance.toFixed(4)}`);
     }
   }
 

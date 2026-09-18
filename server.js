@@ -97,8 +97,27 @@ app.get('/api/referrals', auth, async (req, res) => {
 app.get('/api/upgrade-cost', auth, async (req, res) => {
   try {
     const m = await mining.getState(req.telegramUser.id);
-    const cost = await payments.getUpgradeCost(m.level);
-    res.json({ level: m.level, cost });
+    const nextLevel = m.level + 1;
+    const cost = await payments.getUpgradeCost(nextLevel);
+    res.json({ level: m.level, nextLevel, cost });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/upgrade', auth, async (req, res) => {
+  try {
+    const userId = req.telegramUser.id;
+    const m = await mining.getState(userId);
+    const targetLevel = m.level + 1;
+    const result = await payments.purchaseUpgrade(userId, m.balance, targetLevel);
+    if (!result.ok) {
+      return res.json(result);
+    }
+    await mining.addBalance(userId, -result.cost);
+    await mining.setLevel(userId, targetLevel);
+    res.json({ ok: true, level: targetLevel, cost: result.cost, bonus: result.bonus });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
