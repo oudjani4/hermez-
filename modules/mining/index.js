@@ -4,8 +4,8 @@
 
 const { supabase } = require('../../shared/db');
 
-const SESSION_HOURS = 12;
-const BASE_RATE = 0.001; // عملة/ثانية عند level 1، عدّلها حسب اقتصادك
+const SESSION_HOURS = 24;
+const BASE_RATE = 10 / 86400; // 10 HRZ لكل 24 ساعة عند level 1
 
 function rateForLevel(level) {
   return BASE_RATE * (1 + (level - 1) * 0.05);
