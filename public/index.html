@@ -254,7 +254,18 @@
     <div class="profile-avatar" id="profile-avatar">H</div>
     <div class="profile-name" id="profile-name">—</div>
     <div class="profile-id" id="profile-id">ID: —</div>
+
     <div class="card" style="margin-top:24px">
+      <div class="card-flex">
+        <div>
+          <div class="row-title">Wallet</div>
+          <div class="row-sub" id="wallet-status">Not connected</div>
+        </div>
+        <button class="action-btn" id="wallet-btn" onclick="toggleWallet()">Connect</button>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-flex"><span class="row-title">Balance</span><span class="reward" id="p-balance">0.0000</span></div>
     </div>
     <div class="card">
@@ -262,6 +273,14 @@
     </div>
     <div class="card">
       <div class="card-flex"><span class="row-title">Referrals</span><span class="reward" id="p-refs">0</span></div>
+    </div>
+    <div class="card">
+      <div class="row-title">Withdraw</div>
+      <div class="row-sub" style="margin-bottom:10px">Minimum withdrawal applies. Funds are sent to your wallet.</div>
+      <input type="text" id="withdraw-amount" placeholder="Amount" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;margin-bottom:8px;">
+      <input type="text" id="withdraw-wallet" placeholder="Wallet address" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;margin-bottom:12px;">
+      <button class="action-btn" style="width:100%" onclick="requestWithdraw()">Request Withdraw</button>
+      <div class="mine-status" id="withdraw-status" style="margin-top:10px"></div>
     </div>
   </section>
 
@@ -374,6 +393,21 @@
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
+  // ---- API helper: talks to the real backend (server.js) ----
+  async function api(path, options = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Telegram-Init-Data': tg ? tg.initData : '',
+        ...(options.headers || {})
+      }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'request_failed');
+    return data;
+  }
+
   // ---- Tab navigation ----
   const screens = document.querySelectorAll('.screen');
   const navButtons = document.querySelectorAll('.bottom-nav button');
@@ -400,14 +434,106 @@
     document.execCommand('copy');
   }
 
-  // ---- Mine button (placeholder logic, to be wired to bot mining module) ----
-  document.getElementById('mine-btn').addEventListener('click', () => {
+  // ---- Connect Wallet (placeholder, to be wired to TonConnect) ----
+  let walletConnected = false;
+  function toggleWallet() {
+    const status = document.getElementById('wallet-status');
+    const btn = document.getElementById('wallet-btn');
+    if (!walletConnected) {
+      status.textContent = 'Connecting...';
+      setTimeout(() => {
+        walletConnected = true;
+        const fakeAddress = 'UQ...' + Math.random().toString(36).slice(2, 8);
+        status.textContent = fakeAddress;
+        btn.textContent = 'Disconnect';
+        document.getElementById('withdraw-wallet').value = fakeAddress;
+      }, 600);
+    } else {
+      walletConnected = false;
+      status.textContent = 'Not connected';
+      btn.textContent = 'Connect';
+      document.getElementById('withdraw-wallet').value = '';
+    }
+  }
+
+  // ---- Withdraw (placeholder, to be wired to payments module) ----
+  function requestWithdraw() {
+    const amount = document.getElementById('withdraw-amount').value.trim();
+    const wallet = document.getElementById('withdraw-wallet').value.trim();
+    const status = document.getElementById('withdraw-status');
+    if (!amount || !wallet) {
+      status.textContent = 'Enter both an amount and a wallet address.';
+      return;
+    }
+    status.textContent = 'Withdraw request submitted.';
+    if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
+  }
+
+  // ---- Mine: real state, wired to server.js ----
+  let currentMining = null;
+
+  async function loadState() {
+    try {
+      const { profile, mining } = await api('/api/state');
+      document.getElementById('balance-amount').textContent = Number(profile.balance ?? 0).toFixed(4);
+      document.getElementById('p-balance').textContent = Number(profile.balance ?? 0).toFixed(4);
+      document.getElementById('p-level').textContent = mining.level ?? 1;
+      document.getElementById('p-refs').textContent = profile.referralCount ?? 0;
+      currentMining = mining;
+      updateMineUI();
+    } catch (e) {
+      document.getElementById('mine-status').textContent = 'Could not load your data';
+    }
+  }
+
+  function updateMineUI() {
+    const btn = document.getElementById('mine-btn');
+    const status = document.getElementById('mine-status');
+    if (!currentMining) return;
+    if (currentMining.session_started_at && !currentMining.session_claimed) {
+      btn.textContent = 'Claim Reward';
+      btn.disabled = false;
+      btn.onclick = claimMining;
+      status.textContent = 'Mining in progress...';
+    } else {
+      btn.textContent = 'Start Mining';
+      btn.disabled = false;
+      btn.onclick = startMining;
+      status.textContent = 'Ready to mine';
+    }
+  }
+
+  async function startMining() {
     const btn = document.getElementById('mine-btn');
     const status = document.getElementById('mine-status');
     btn.disabled = true;
-    btn.textContent = 'Mining...';
-    status.textContent = '12-hour mining session started';
-  });
+    status.textContent = 'Starting...';
+    try {
+      await api('/api/mine/start', { method: 'POST' });
+      status.textContent = '12-hour mining session started';
+      await loadState();
+    } catch (e) {
+      status.textContent = 'Could not start mining session';
+      btn.disabled = false;
+    }
+  }
+
+  async function claimMining() {
+    const btn = document.getElementById('mine-btn');
+    const status = document.getElementById('mine-status');
+    btn.disabled = true;
+    status.textContent = 'Claiming...';
+    try {
+      const result = await api('/api/mine/claim', { method: 'POST' });
+      status.textContent = `Claimed ${Number(result.earned ?? 0).toFixed(4)} coins!`;
+      await loadState();
+    } catch (e) {
+      status.textContent = 'Could not claim reward';
+      btn.disabled = false;
+    }
+  }
+
+  loadState();
 
   // ---- Task / Monetag ads ----
   function watchAd(code, btnEl) {
