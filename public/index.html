@@ -469,14 +469,18 @@
     if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
   }
 
-  // ---- Mine: real state, wired to server.js ----
+  // ---- Mine: real state, wired to server.js, with live ticking counter ----
   let currentMining = null;
+  let currentBalance = 0;
+  let tickInterval = null;
+  const RATE_PER_LEVEL = (level) => (10 / 86400) * (1 + (level - 1) * 0.05); // matches backend rateForLevel
 
   async function loadState() {
     try {
       const { profile, mining } = await api('/api/state');
-      document.getElementById('balance-amount').textContent = Number(profile.balance ?? 0).toFixed(4);
-      document.getElementById('p-balance').textContent = Number(profile.balance ?? 0).toFixed(4);
+      currentBalance = Number(profile.balance ?? 0);
+      document.getElementById('balance-amount').textContent = currentBalance.toFixed(4);
+      document.getElementById('p-balance').textContent = currentBalance.toFixed(4);
       document.getElementById('p-level').textContent = mining.level ?? 1;
       document.getElementById('p-refs').textContent = profile.referralCount ?? 0;
       currentMining = mining;
@@ -489,17 +493,37 @@
   function updateMineUI() {
     const btn = document.getElementById('mine-btn');
     const status = document.getElementById('mine-status');
+    clearInterval(tickInterval);
+
     if (!currentMining) return;
-    if (currentMining.session_started_at && !currentMining.session_claimed) {
+
+    const active = currentMining.session_started_at && !currentMining.session_claimed;
+    if (active) {
       btn.textContent = 'Claim Reward';
       btn.disabled = false;
       btn.onclick = claimMining;
-      status.textContent = 'Mining in progress...';
+
+      const startedAt = new Date(currentMining.session_started_at).getTime();
+      const rate = RATE_PER_LEVEL(currentMining.level);
+      const capSeconds = 24 * 3600;
+
+      const tick = () => {
+        const elapsedSeconds = Math.min((Date.now() - startedAt) / 1000, capSeconds);
+        const pending = elapsedSeconds * rate;
+        document.getElementById('balance-amount').textContent = (currentBalance + pending).toFixed(4);
+        const hoursLeft = Math.max(0, (capSeconds - elapsedSeconds) / 3600);
+        status.textContent = hoursLeft > 0
+          ? `Mining... ${hoursLeft.toFixed(1)}h left`
+          : 'Session complete — tap Claim';
+      };
+      tick();
+      tickInterval = setInterval(tick, 1000);
     } else {
       btn.textContent = 'Start Mining';
       btn.disabled = false;
       btn.onclick = startMining;
       status.textContent = 'Ready to mine';
+      document.getElementById('balance-amount').textContent = currentBalance.toFixed(4);
     }
   }
 
@@ -510,7 +534,6 @@
     status.textContent = 'Starting...';
     try {
       await api('/api/mine/start', { method: 'POST' });
-      status.textContent = '12-hour mining session started';
       await loadState();
     } catch (e) {
       status.textContent = 'Could not start mining session';
@@ -522,6 +545,7 @@
     const btn = document.getElementById('mine-btn');
     const status = document.getElementById('mine-status');
     btn.disabled = true;
+    clearInterval(tickInterval);
     status.textContent = 'Claiming...';
     try {
       const result = await api('/api/mine/claim', { method: 'POST' });
