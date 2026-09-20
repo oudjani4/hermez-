@@ -115,4 +115,40 @@ async function addBalance(userId, amount) {
   return newBalance;
 }
 
-module.exports = { getState, startSession, claimSession, setLevel, rateForLevel, addBalance };
+
+async function purchaseUpgrade(userId, targetLevel) {
+  if (targetLevel > MAX_LEVEL) {
+    return { ok: false, reason: "max_level_reached" };
+  }
+
+  const { data: upgrade, error: upErr } = await supabase
+    .from('upgrades')
+    .select('*')
+    .eq('level', targetLevel)
+    .maybeSingle();
+  if (upErr) throw upErr;
+  if (!upgrade) {
+    return { ok: false, reason: "upgrade_not_found" };
+  }
+
+  const state = await getState(userId);
+
+  if (state.level !== targetLevel - 1) {
+    return { ok: false, reason: "wrong_level" };
+  }
+
+  if (Number(state.balance) < Number(upgrade.cost)) {
+    return { ok: false, reason: "insufficient_balance" };
+  }
+
+  const newBalance = Number(state.balance) - Number(upgrade.cost);
+  const { error: updErr } = await supabase
+    .from('mining_state')
+    .update({ balance: newBalance, level: targetLevel })
+    .eq('user_id', userId);
+  if (updErr) throw updErr;
+
+  return { ok: true, newBalance, newLevel: targetLevel };
+}
+
+module.exports = { getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade };

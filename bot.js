@@ -67,6 +67,25 @@ bot.on('message', async (ctx) => {
   if (!ctx.message || !ctx.message.web_app_data) return;
   try {
     const payload = JSON.parse(ctx.message.web_app_data.data);
+    if (payload.action === 'request_upgrade') {
+      try {
+        const result = await mining.purchaseUpgrade(ctx.from.id, payload.level);
+        if (!result.ok) {
+          const reasons = {
+            max_level_reached: 'وصلت لأعلى مستوى.',
+            upgrade_not_found: 'هذا المستوى غير متوفر.',
+            wrong_level: 'يجب ترقية المستوى بالترتيب.',
+            insufficient_balance: 'رصيدك غير كافٍ لهذه الترقية.',
+          };
+          return ctx.reply(reasons[result.reason] || 'تعذر إتمام الترقية.');
+        }
+        return ctx.reply(`✅ تم الترقية إلى المستوى ${result.newLevel}!\nرصيدك الآن: ${result.newBalance.toFixed(4)}`);
+      } catch (e) {
+        console.error('request_upgrade error:', e);
+        return ctx.reply('حدث خطأ أثناء الترقية.');
+      }
+    }
+
     if (payload.action !== 'complete_task') return;
     const allTasks = await tasks.listActiveTasks();
     const task = allTasks.find(t => t.code === payload.code);
