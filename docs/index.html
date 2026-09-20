@@ -305,20 +305,7 @@
 
   <section class="screen" id="screen-booster">
     <div class="panel-title">Booster</div>
-    <div class="card card-flex">
-      <div>
-        <div class="row-title">Mining ×2</div>
-        <div class="row-sub">Double your mining speed for 24 hours</div>
-      </div>
-      <button class="action-btn">Activate</button>
-    </div>
-    <div class="card card-flex">
-      <div>
-        <div class="row-title">Mining ×3</div>
-        <div class="row-sub">Triple your mining speed for 48 hours</div>
-      </div>
-      <button class="action-btn">Activate</button>
-    </div>
+    <div id="booster-list"><div class="row-sub" style="text-align:center">Loading boosters...</div></div>
   </section>
 
   <section class="screen" id="screen-miner">
@@ -422,6 +409,26 @@
     `).join('');
   }
   loadUpgrades();
+
+  async function loadBoosters() {
+    const listEl = document.getElementById('booster-list');
+    if (!sb) { listEl.innerHTML = '<div class="row-sub" style="text-align:center">Error: client failed.</div>'; return; }
+    let data, error;
+    try {
+      const res = await sb.from('boosters').select('*').order('multiplier', { ascending: true });
+      data = res.data; error = res.error;
+    } catch (e) { listEl.innerHTML = '<div class="row-sub" style="text-align:center">Error: ' + e.message + '</div>'; return; }
+    if (error) { listEl.innerHTML = '<div class="row-sub" style="text-align:center">Error: ' + (error.message || JSON.stringify(error)) + '</div>'; return; }
+    if (!data || data.length === 0) { listEl.innerHTML = '<div class="row-sub" style="text-align:center">No boosters yet.</div>'; return; }
+    listEl.innerHTML = data.map(function(b) {
+      return '<div class="card card-flex"><div><div class="row-title">' + b.name + '</div><div class="row-sub">×' + b.multiplier + ' mining speed for ' + b.duration_hours + 'h · Cost: <span class="reward">' + b.cost + '</span></div></div><button class="action-btn" onclick="requestBooster(' + b.id + ')">Activate</button></div>';
+    }).join('');
+  }
+  loadBoosters();
+
+  function requestBooster(id) {
+    if (tg) tg.sendData(JSON.stringify({ action: 'request_booster', id: id }));
+  }
 
   function requestUpgrade(level) {
     if (tg) tg.sendData(JSON.stringify({ action: 'request_upgrade', level }));
