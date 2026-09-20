@@ -6,6 +6,7 @@
 <title>Hermez Coin</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
 <style>
   :root {
     --bg: #0e0b08;
@@ -448,31 +449,41 @@
     document.execCommand('copy');
   }
 
-  let walletConnected = false;
-  function toggleWallet() {
+  const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: 'https://oudjani4.github.io/hermez-/tonconnect-manifest.json'
+  });
+
+  function shortAddr(a) { return a ? a.slice(0,4) + '...' + a.slice(-4) : ''; }
+
+  function updateWalletUI(wallet) {
     const status = document.getElementById('wallet-status');
     const btn = document.getElementById('wallet-btn');
     const topBtn = document.getElementById('wallet-btn-top');
     const topStatus = document.getElementById('wallet-status-top');
-    if (!walletConnected) {
-      if (status) status.textContent = 'Connecting...';
-      if (topStatus) topStatus.textContent = 'Connecting...';
-      setTimeout(() => {
-        walletConnected = true;
-        const fakeAddress = 'UQ...' + Math.random().toString(36).slice(2, 8);
-        if (status) status.textContent = fakeAddress;
-        if (btn) btn.textContent = 'Disconnect';
-        if (topBtn) topBtn.textContent = 'Disconnect';
-        if (topStatus) topStatus.textContent = 'Connected';
-        document.getElementById('withdraw-wallet').value = fakeAddress;
-      }, 600);
+    if (wallet) {
+      const addr = shortAddr(wallet.account.address);
+      if (status) status.textContent = addr;
+      if (btn) btn.textContent = 'Disconnect';
+      if (topBtn) topBtn.textContent = 'Disconnect';
+      if (topStatus) topStatus.textContent = 'Connected';
+      document.getElementById('withdraw-wallet').value = wallet.account.address;
     } else {
-      walletConnected = false;
       if (status) status.textContent = 'Not connected';
       if (btn) btn.textContent = 'Connect';
       if (topBtn) topBtn.textContent = 'Connect';
       if (topStatus) topStatus.textContent = 'Disconnected';
       document.getElementById('withdraw-wallet').value = '';
+    }
+  }
+
+  tonConnectUI.onStatusChange(updateWalletUI);
+  updateWalletUI(tonConnectUI.wallet);
+
+  function toggleWallet() {
+    if (tonConnectUI.connected) {
+      tonConnectUI.disconnect();
+    } else {
+      tonConnectUI.openModal();
     }
   }
 
