@@ -25,6 +25,11 @@ async function purchaseUpgrade(userId, currentBalance, targetLevel) {
 }
 
 async function requestWithdrawal(userId, amount) {
+  const MIN_WITHDRAWAL = 500;
+  if (amount < MIN_WITHDRAWAL) {
+    return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
+  }
+
   const { data: reserve, error: reserveErr } = await supabase
     .from('reserve_wallet')
     .select('balance')
