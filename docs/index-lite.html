@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hermez Coin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --bg: #0e0b08;
+    --bg-panel: #17120c;
+    --gold: #e7c565;
+    --gold-bright: #f6df9a;
+    --gold-dim: #8a723f;
+    --text-dim: #9a8f7a;
+    --border: #2a2115;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: #f0e9d8;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    background:
+      radial-gradient(circle at 50% 15%, rgba(231,197,101,0.07), transparent 60%),
+      var(--bg);
+  }
+  .screen { display: none; min-height: 100vh; min-height: 100svh; padding: 28px 22px 20px; overflow-y: auto; }
+  .screen.active { display: block; }
+  .screen-centered.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 22px;
+    min-height: calc(100vh - 78px);
+    min-height: calc(100svh - 78px);
+    padding-bottom: 0;
+  }
+  .screen-centered .brand,
+  .screen-centered .balance-block,
+  .screen-centered .coin-wrap,
+  .screen-centered .mine-btn,
+  .screen-centered .mine-status {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  /* ---- MINE ---- */
+  .brand { text-align: center; margin-top: 0; }
+  .brand h1 {
+    margin: 0;
+    font-size: 34px;
+    letter-spacing: 6px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    text-shadow: 0 0 18px rgba(231,197,101,0.25);
+  }
+  .brand .sub {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    letter-spacing: 4px;
+    color: var(--gold-dim);
+  }
+  .brand .rule {
+    width: 90px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    margin: 14px auto 0;
+  }
+
+  .balance-block { text-align: center; margin-top: 0; }
+  .balance-block .amount {
+    font-size: 44px;
+    font-weight: 700;
+    color: var(--gold-bright);
+    letter-spacing: 1px;
+  }
+  .balance-block .label {
+    margin-top: 4px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+  }
+
+  .coin-wrap { display: flex; justify-content: center; margin: 0; }
+  .coin { width: 190px; height: 190px; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(231,197,101,0.25)); }
+
+  .mine-btn {
+    display: block;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    padding: 16px;
+    border: none;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #241a08;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+    box-shadow: 0 6px 20px rgba(231,197,101,0.25);
+    cursor: pointer;
+  }
+  .mine-btn:disabled {
+    background: #3a3226;
+    color: #8a8270;
+    box-shadow: none;
+  }
+  .mine-status {
+    text-align: center;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  /* ---- Generic panel screens ---- */
+  .panel-title {
+    font-size: 20px;
+    color: var(--gold-bright);
+    letter-spacing: 2px;
+    margin: 4px 0 18px;
+    text-align: center;
+  }
+  .card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .card .row-title { font-size: 15px; color: #f0e9d8; }
+  .card .row-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+  .card .reward { color: var(--gold); font-weight: 700; }
+
+  .task-btn, .action-btn {
+    font-family: inherit;
+    border: 1px solid var(--gold-dim);
+    background: transparent;
+    color: var(--gold-bright);
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .task-btn:disabled {
+    color: var(--text-dim);
+    border-color: var(--border);
+  }
+  .card-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .ref-link-box {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .ref-link-box input {
+    flex: 1;
+    background: #0b0906;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 12px;
+  }
+
+  .profile-avatar {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--gold-dim));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    font-weight: 700;
+    color: #241a08;
+  }
+  .profile-name { text-align: center; font-size: 17px; color: #f0e9d8; }
+  .profile-id { text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ---- Bottom Nav ---- */
+  nav.bottom-nav {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 10;
+    display: flex;
+    background: #100c08;
+    border-top: 1px solid var(--border);
+    padding: 10px 4px calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+  nav.bottom-nav button {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  nav.bottom-nav button svg { width: 22px; height: 22px; }
+  nav.bottom-nav button.active { color: var(--gold-bright); }
+  nav.bottom-nav button.active svg { filter: drop-shadow(0 0 4px rgba(231,197,101,0.5)); }
+</style>
+</head>
+<body>
+
+  <!-- MINE -->
+  <section class="screen screen-centered active" id="screen-mine">
+    <div class="brand">
+      <h1>HERMEZ</h1>
+      <span class="sub">COIN</span>
+      <div class="rule"></div>
+    </div>
+
+    <div class="balance-block">
+      <div class="amount" id="balance-amount">0.0000</div>
+      <div class="label">CURRENT BALANCE</div>
+    </div>
+
+    <div class="coin-wrap">
+      <img class="coin" alt="Hermez Coin" src="coin-gold.png">
+    </div>
+
+    <button class="mine-btn" id="mine-btn">Start Mining</button>
+    <div class="mine-status" id="mine-status">Ready to mine</div>
+  </section>
+
+  <!-- PROFILE -->
+  <section class="screen" id="screen-profile">
+    <div class="panel-title">Profile</div>
+    <div class="profile-avatar" id="profile-avatar">H</div>
+    <div class="profile-name" id="profile-name">—</div>
+    <div class="profile-id" id="profile-id">ID: —</div>
+
+    <div class="card" style="margin-top:24px">
+      <div class="card-flex">
+        <div>
+          <div class="row-title">Wallet</div>
+          <div class="row-sub" id="wallet-status">Not connected</div>
+        </div>
+        <button class="action-btn" id="wallet-btn" onclick="toggleWallet()">Connect</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-flex"><span class="row-title">Balance</span><span class="reward" id="p-balance">0.0000</span></div>
+    </div>
+    <div class="card">
+      <div class="card-flex"><span class="row-title">Level</span><span class="reward" id="p-level">1</span></div>
+    </div>
+    <div class="card">
+      <div class="card-flex"><span class="row-title">Referrals</span><span class="reward" id="p-refs">0</span></div>
+    </div>
+    <div class="card">
+      <div class="row-title">Withdraw</div>
+      <div class="row-sub" style="margin-bottom:10px">Minimum withdrawal applies. Funds are sent to your wallet.</div>
+      <input type="text" id="withdraw-amount" placeholder="Amount" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;margin-bottom:8px;">
+      <input type="text" id="withdraw-wallet" placeholder="Wallet address" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;margin-bottom:12px;">
+      <button class="action-btn" style="width:100%" onclick="requestWithdraw()">Request Withdraw</button>
+      <div class="mine-status" id="withdraw-status" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- FRIENDS / REFERRAL -->
+  <section class="screen" id="screen-friends">
+    <div class="panel-title">Friends</div>
+    <div class="card">
+      <div class="row-title">Your invite link</div>
+      <div class="row-sub" style="margin-bottom:10px">Every friend who joins through your link earns you a mining bonus</div>
+      <div class="ref-link-box">
+        <input type="text" id="ref-link" readonly value="https://t.me/hermezcoin_bot?start=—">
+        <button class="action-btn" onclick="copyRefLink()">Copy</button>
+      </div>
+    </div>
+    <div class="card card-flex">
+      <span class="row-title">Total referrals</span>
+      <span class="reward" id="ref-count">0</span>
+    </div>
+  </section>
+
+  <!-- BOOSTER -->
+  <section class="screen" id="screen-booster">
+    <div class="panel-title">Booster</div>
+    <div class="card card-flex">
+      <div>
+        <div class="row-title">Mining ×2</div>
+        <div class="row-sub">Double your mining speed for 24 hours</div>
+      </div>
+      <button class="action-btn">Activate</button>
+    </div>
+    <div class="card card-flex">
+      <div>
+        <div class="row-title">Mining ×3</div>
+        <div class="row-sub">Triple your mining speed for 48 hours</div>
+      </div>
+      <button class="action-btn">Activate</button>
+    </div>
+  </section>
+
+  <!-- MINER / UPGRADE -->
+  <section class="screen" id="screen-miner">
+    <div class="panel-title">Upgrade</div>
+    <div id="miner-list">
+      <div class="row-sub" style="text-align:center">Loading levels...</div>
+    </div>
+  </section>
+
+  <!-- TASKS -->
+  <section class="screen" id="screen-tasks">
+    <div class="panel-title">Tasks</div>
+    <div class="card card-flex">
+      <div><div class="row-title">Watch Ad 1</div><div class="row-sub reward">+5 coins</div></div>
+      <button class="task-btn" onclick="watchAd('monetag_view_1', this)">Watch</button>
+    </div>
+    <div class="card card-flex">
+      <div><div class="row-title">Watch Ad 2</div><div class="row-sub reward">+5 coins</div></div>
+      <button class="task-btn" onclick="watchAd('monetag_view_2', this)">Watch</button>
+    </div>
+    <div class="card card-flex">
+      <div><div class="row-title">Watch Ad 3</div><div class="row-sub reward">+5 coins</div></div>
+      <button class="task-btn" onclick="watchAd('monetag_view_3', this)">Watch</button>
+    </div>
+    <div class="card card-flex">
+      <div><div class="row-title">Watch Ad 4</div><div class="row-sub reward">+5 coins</div></div>
+      <button class="task-btn" onclick="watchAd('monetag_view_4', this)">Watch</button>
+    </div>
+    <div class="mine-status" id="task-status"></div>
+  </section>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button data-screen="profile">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Profile
+    </button>
+    <button data-screen="friends">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3 20c0-3.4 2.8-6 6-6s6 2.6 6 6"/><path d="M14.5 14.2c2.6.3 4.5 2.4 4.5 5.3"/></svg>
+      Friends
+    </button>
+    <button data-screen="booster">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>
+      Booster
+    </button>
+    <button data-screen="miner">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21v-6l7-9 3 3 3-3 3 3-9 9-4-1Z"/><path d="M14 6l4 4"/></svg>
+      Miner
+    </button>
+    <button data-screen="tasks">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.2 2.2L15.5 9.5"/></svg>
+      Tasks
+    </button>
+    <button data-screen="mine" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg>
+      Mine
+    </button>
+  </nav>
+
+<script>
+  const tg = window.Telegram?.WebApp;
+  if (tg) { tg.ready(); tg.expand(); }
+
+  // ---- Supabase client (public read-only key) ----
+  const SUPABASE_URL = 'https://kchlvixnacsvfhwqnitn.supabase.co';
+  const SUPABASE_PUBLIC_KEY = 'sb_publishable_XiLzEU1cboPi3oTcuDUI5w_LveMLTYj';
+  let sb = null;
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLIC_KEY);
+  } catch (e) {
+    console.error('Supabase client init failed', e);
+  }
+
+  async function loadUpgrades() {
+    const listEl = document.getElementById('miner-list');
+    if (!sb) {
+      listEl.innerHTML = '<div class="row-sub" style="text-align:center">Error: Supabase client failed to load.</div>';
+      return;
+    }
+    let data, error;
+    try {
+      const res = await sb.from('upgrades').select('*').order('level', { ascending: true });
+      data = res.data; error = res.error;
+    } catch (e) {
+      listEl.innerHTML = `<div class="row-sub" style="text-align:center">Error: ${e.message}</div>`;
+      return;
+    }
+    if (error) {
+      listEl.innerHTML = `<div class="row-sub" style="text-align:center">Error: ${error.message || JSON.stringify(error)}</div>`;
+      return;
+    }
+    if (!data || data.length === 0) {
+      listEl.innerHTML = '<div class="row-sub" style="text-align:center">No levels available yet.</div>';
+      return;
+    }
+    listEl.innerHTML = data.map(u => `
+      <div class="card card-flex">
+        <div>
+          <div class="row-title">Level ${u.level}</div>
+          <div class="row-sub">+${u.mining_rate_bonus}% mining rate · Cost: <span class="reward">${u.cost}</span></div>
+        </div>
+        <button class="action-btn" onclick="requestUpgrade(${u.level})">Upgrade</button>
+      </div>
+    `).join('');
+  }
+  loadUpgrades();
+
+  function requestUpgrade(level) {
+    if (tg) tg.sendData(JSON.stringify({ action: 'request_upgrade', level }));
+  }
+
+  // ---- Tab navigation ----
+  const screens = document.querySelectorAll('.screen');
+  const navButtons = document.querySelectorAll('.bottom-nav button');
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.screen;
+      screens.forEach(s => s.classList.toggle('active', s.id === 'screen-' + target));
+      navButtons.forEach(b => b.classList.toggle('active', b === btn));
+    });
+  });
+
+  // ---- Placeholder user context (wire to Supabase/bot next) ----
+  const user = tg?.initDataUnsafe?.user;
+  if (user) {
+    document.getElementById('profile-name').textContent = user.first_name || 'User';
+    document.getElementById('profile-avatar').textContent = (user.first_name || 'H')[0].toUpperCase();
+    document.getElementById('profile-id').textContent = 'ID: ' + user.id;
+    document.getElementById('ref-link').value = `https://t.me/hermezcoin_bot?start=${user.id}`;
+  }
+
+  function copyRefLink() {
+    const input = document.getElementById('ref-link');
+    input.select();
+    document.execCommand('copy');
+  }
+
+  // ---- Connect Wallet (placeholder, to be wired to TonConnect) ----
+  let walletConnected = false;
+  function toggleWallet() {
+    const status = document.getElementById('wallet-status');
+    const btn = document.getElementById('wallet-btn');
+    if (!walletConnected) {
+      status.textContent = 'Connecting...';
+      setTimeout(() => {
+        walletConnected = true;
+        const fakeAddress = 'UQ...' + Math.random().toString(36).slice(2, 8);
+        status.textContent = fakeAddress;
+        btn.textContent = 'Disconnect';
+        document.getElementById('withdraw-wallet').value = fakeAddress;
+      }, 600);
+    } else {
+      walletConnected = false;
+      status.textContent = 'Not connected';
+      btn.textContent = 'Connect';
+      document.getElementById('withdraw-wallet').value = '';
+    }
+  }
+
+  // ---- Withdraw (placeholder, to be wired to payments module) ----
+  function requestWithdraw() {
+    const amount = document.getElementById('withdraw-amount').value.trim();
+    const wallet = document.getElementById('withdraw-wallet').value.trim();
+    const status = document.getElementById('withdraw-status');
+    if (!amount || !wallet) {
+      status.textContent = 'Enter both an amount and a wallet address.';
+      return;
+    }
+    status.textContent = 'Withdraw request submitted.';
+    if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
+  }
+
+  // ---- Mine button (placeholder logic, to be wired to bot mining module) ----
+  document.getElementById('mine-btn').addEventListener('click', () => {
+    const btn = document.getElementById('mine-btn');
+    const status = document.getElementById('mine-status');
+    btn.disabled = true;
+    btn.textContent = 'Mining...';
+    status.textContent = '12-hour mining session started';
+  });
+
+  // ---- Task / Monetag ads ----
+  function watchAd(code, btnEl) {
+    const status = document.getElementById('task-status');
+    status.textContent = 'Loading ad...';
+    if (typeof window['show_11813680'] !== 'function') {
+      status.textContent = 'Could not load the ad, try again later.';
+      return;
+    }
+    window['show_11813680']().then(() => {
+      status.textContent = 'Done! Recording your reward...';
+      btnEl.disabled = true;
+      btnEl.textContent = 'Done ✅';
+      if (tg) tg.sendData(JSON.stringify({ action: 'complete_task', code }));
+    }).catch(() => {
+      status.textContent = 'Ad was not completed.';
+    });
+  }
+</script>
+<script async src='//libtl.com/sdk.js' data-zone='11813680' data-sdk='show_11813680'></script>
+</body>
+</html>
