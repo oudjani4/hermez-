@@ -226,6 +226,7 @@
 <body>
 
   <section class="screen screen-centered active" id="screen-mine">
+    <button id="wallet-btn-top" class="action-btn" onclick="toggleWallet()" style="align-self:center;margin-bottom:-6px;font-size:11px;padding:6px 14px;">Connect Wallet</button>
     <div class="brand">
       <h1>HERMEZ</h1>
       <span class="sub">COIN</span>
@@ -448,19 +449,23 @@
   function toggleWallet() {
     const status = document.getElementById('wallet-status');
     const btn = document.getElementById('wallet-btn');
+    const topBtn = document.getElementById('wallet-btn-top');
     if (!walletConnected) {
-      status.textContent = 'Connecting...';
+      if (status) status.textContent = 'Connecting...';
+      if (topBtn) topBtn.textContent = 'Connecting...';
       setTimeout(() => {
         walletConnected = true;
         const fakeAddress = 'UQ...' + Math.random().toString(36).slice(2, 8);
-        status.textContent = fakeAddress;
-        btn.textContent = 'Disconnect';
+        if (status) status.textContent = fakeAddress;
+        if (btn) btn.textContent = 'Disconnect';
+        if (topBtn) topBtn.textContent = fakeAddress;
         document.getElementById('withdraw-wallet').value = fakeAddress;
       }, 600);
     } else {
       walletConnected = false;
-      status.textContent = 'Not connected';
-      btn.textContent = 'Connect';
+      if (status) status.textContent = 'Not connected';
+      if (btn) btn.textContent = 'Connect';
+      if (topBtn) topBtn.textContent = 'Connect Wallet';
       document.getElementById('withdraw-wallet').value = '';
     }
   }
