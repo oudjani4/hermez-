@@ -106,21 +106,46 @@ app.get('/api/upgrade-cost', auth, async (req, res) => {
   }
 });
 
-app.post('/api/upgrade', auth, async (req, res) => {
+app.post("/api/upgrade", auth, async (req, res) => {
   try {
     const userId = req.telegramUser.id;
+    const { tx_hash } = req.body;
+    if (!tx_hash) return res.status(400).json({ error: "missing_tx_hash" });
+
+    const alreadyUsed = await payments.isTxAlreadyUsed(tx_hash);
+    if (alreadyUsed) return res.status(400).json({ error: "tx_already_used" });
+
     const m = await mining.getState(userId);
     const targetLevel = m.level + 1;
-    const result = await payments.purchaseUpgrade(userId, m.balance, targetLevel);
-    if (!result.ok) {
-      return res.json(result);
+    const upgrade = await payments.getUpgradeCost(targetLevel);
+
+    const verify = await payments.verifyTonTransaction(tx_hash, upgrade.cost);
+    if (!verify.ok) {
+      return res.json(verify);
     }
-    await mining.addBalance(userId, -result.cost);
-    await mining.setLevel(userId, targetLevel);
-    res.json({ ok: true, level: targetLevel, cost: result.cost, bonus: result.bonus });
+
+    await payments.markTxUsed(tx_hash, userId, `upgrade_level_${targetLevel}`);
+    const setResult = await mining.setLevel(userId, targetLevel);
+    if (!setResult.ok) {
+      return res.json(setResult);
+    }
+
+    res.json({ ok: true, level: targetLevel, cost: upgrade.cost, bonus: upgrade.mining_rate_bonus });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: 'server_error' });
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+app.post("/api/wallet", auth, async (req, res) => {
+  try {
+    const { address } = req.body;
+    if (!address) return res.status(400).json({ error: "missing_address" });
+    await profile.setWallet(req.telegramUser.id, address);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "server_error" });
   }
 });
 

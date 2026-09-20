@@ -34,4 +34,13 @@ async function getFullProfile(userId) {
   };
 }
 
-module.exports = { ensureUser, getFullProfile };
+async function setWallet(userId, address) {
+  const { error } = await supabase
+    .from("users")
+    .update({ wallet_address: address })
+    .eq("id", userId);
+  if (error) throw error;
+  return { ok: true };
+}
+
+module.exports = { ensureUser, getFullProfile, setWallet };

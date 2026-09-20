@@ -6,6 +6,7 @@ const { supabase } = require('../../shared/db');
 
 const SESSION_HOURS = 24;
 const BASE_RATE = 10 / 86400; // 10 HRZ لكل 24 ساعة عند level 1
+const MAX_LEVEL = 25;
 
 function rateForLevel(level) {
   return BASE_RATE * (1 + (level - 1) * 0.05);
@@ -77,6 +78,9 @@ async function claimSession(userId) {
 
 // upgrades تستدعي هذي الدالة بس، مو توصل لجدول mining_state مباشرة
 async function setLevel(userId, newLevel) {
+  if (newLevel > MAX_LEVEL) {
+    return { ok: false, reason: "max_level_reached" };
+  }
   const { error } = await supabase
     .from('mining_state')
     .update({ level: newLevel })

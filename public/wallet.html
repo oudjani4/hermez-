@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hermez - محفظتي</title>
+  <script src="https://unpkg.com/@tonconnect/ui@latest/dist/tonconnect-ui.min.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      background: #0f0f1a;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    #ton-connect { margin-top: 20px; }
+    #status { margin-top: 16px; font-size: 14px; color: #9aa0ff; }
+  </style>
+</head>
+<body>
+  <h2>ربط محفظتك</h2>
+  <div id="ton-connect"></div>
+  <div id="status"></div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    const tonConnectUI = new TON_CONNECT_UI.TonConnectUI({
+      manifestUrl: 'https://hermez-backend.onrender.com/tonconnect-manifest.json',
+      buttonRootId: 'ton-connect'
+    });
+
+    const statusEl = document.getElementById('status');
+
+    // يتنفذ أول ما يتصل بالمحفظة (أو لو كان متصل من قبل)
+    tonConnectUI.onStatusChange(async (wallet) => {
+      if (!wallet) {
+        statusEl.textContent = 'ما زلت غير متصل';
+        return;
+      }
+
+      const address = wallet.account.address;
+      statusEl.textContent = 'جاري الربط...';
+
+      try {
+        const res = await fetch('https://hermez-backend.onrender.com/api/wallet', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Telegram-Init-Data': tg.initData
+          },
+          body: JSON.stringify({ address })
+        });
+
+        const data = await res.json();
+        if (data.ok) {
+          statusEl.textContent = '✅ تم ربط المحفظة بنجاح';
+        } else {
+          statusEl.textContent = '❌ صار خطأ: ' + (data.error || 'غير معروف');
+        }
+      } catch (e) {
+        statusEl.textContent = '❌ فشل الاتصال بالسيرفر';
+      }
+    });
+  </script>
+</body>
+</html>

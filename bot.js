@@ -89,3 +89,13 @@ console.log('hermez bot running');
 
 process.once('SIGINT', () => bot.stop('SIGINT'));
 process.once('SIGTERM', () => bot.stop('SIGTERM'));
+
+bot.command("wallet", (ctx) => {
+  ctx.reply("اربط محفظتك:", {
+    reply_markup: {
+      inline_keyboard: [[
+        { text: "🔗 Connect Wallet", web_app: { url: "https://hermez-backend.onrender.com/wallet.html" } }
+      ]]
+    }
+  });
+});

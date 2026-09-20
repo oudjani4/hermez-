@@ -75,4 +75,57 @@ async function approveWithdrawal(withdrawalId) {
   return { ok: true };
 }
 
-module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWithdrawal };
+
+// ===== التحقق من معاملات TON على البلوكتشين =====
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY;
+const PROJECT_TON_WALLET = process.env.PROJECT_TON_WALLET;
+
+async function verifyTonTransaction(txHash, expectedAmountTon) {
+  const url = `https://toncenter.com/api/v3/transactions?hash=${txHash}`;
+  const res = await fetch(url, {
+    headers: { "X-API-Key": TONCENTER_API_KEY }
+  });
+  const data = await res.json();
+
+  if (!data.transactions || data.transactions.length === 0) {
+    return { ok: false, reason: "tx_not_found" };
+  }
+
+  const tx = data.transactions[0];
+  const inMsg = tx.in_msg;
+
+  if (!inMsg || !inMsg.destination) {
+    return { ok: false, reason: "invalid_tx" };
+  }
+
+  // نتأكد الوجهة هي محفظة المشروع
+  if (inMsg.destination !== PROJECT_TON_WALLET) {
+    return { ok: false, reason: "wrong_destination" };
+  }
+
+  const amountTon = Number(inMsg.value) / 1e9; // من nanoton لـ TON
+  if (amountTon < expectedAmountTon) {
+    return { ok: false, reason: "insufficient_amount", received: amountTon, expected: expectedAmountTon };
+  }
+
+  return { ok: true, amount: amountTon };
+}
+
+async function isTxAlreadyUsed(txHash) {
+  const { data, error } = await supabase
+    .from("wallet_transactions")
+    .select("id")
+    .eq("tx_hash", txHash)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+async function markTxUsed(txHash, userId, purpose) {
+  const { error } = await supabase
+    .from("wallet_transactions")
+    .insert({ tx_hash: txHash, user_id: userId, purpose });
+  if (error) throw error;
+}
+
+module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWithdrawal, verifyTonTransaction, isTxAlreadyUsed, markTxUsed };
