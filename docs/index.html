@@ -227,12 +227,11 @@
 <body>
 
   <section class="screen screen-centered active" id="screen-mine">
-    <div id="wallet-pill" style="position:absolute; top:14px; right:16px; left:16px; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:10px; background:#12203a; border:1px solid #2f5da8; border-radius:12px; padding:8px 10px 8px 14px;">
-      <div style="display:flex; align-items:center; gap:8px; overflow:hidden;">
-        <span id="wallet-dot" style="width:8px; height:8px; border-radius:50%; background:#e05a5a; flex-shrink:0;"></span>
-        <span id="wallet-status-top" style="font-size:12px; color:#dbe6fa; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Disconnected</span>
-      </div>
-      <button id="wallet-btn-top" onclick="toggleWallet()" style="font-family:inherit; border:none; background:#2f7de1; color:#fff; padding:7px 14px; border-radius:9px; font-size:11px; font-weight:700; cursor:pointer; flex-shrink:0;">Connect</button>
+    <div id="wallet-pill" style="position:absolute; top:14px; right:16px; z-index:5;">
+      <button id="wallet-btn-top" onclick="toggleWallet()" style="display:flex; align-items:center; gap:7px; font-family:inherit; border:none; background:#2f7de1; color:#fff; padding:9px 16px; border-radius:24px; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 4px 12px rgba(47,125,225,0.35);">
+        <span style="font-size:13px; line-height:1;">◈</span>
+        <span id="wallet-status-top">Connect Wallet</span>
+      </button>
     </div>
     <div class="brand">
       <h1>HERMEZ</h1>
@@ -461,23 +460,17 @@
   function updateWalletUI(wallet) {
     const status = document.getElementById('wallet-status');
     const btn = document.getElementById('wallet-btn');
-    const topBtn = document.getElementById('wallet-btn-top');
     const topStatus = document.getElementById('wallet-status-top');
-    const dot = document.getElementById('wallet-dot');
     if (wallet) {
       const addr = shortAddr(wallet.account.address);
       if (status) status.textContent = addr;
       if (btn) btn.textContent = 'Disconnect';
-      if (topBtn) topBtn.textContent = 'Disconnect';
-      if (topStatus) topStatus.textContent = addr;
-      if (dot) dot.style.background = '#3ecf6e';
+      if (topStatus) topStatus.textContent = addr + ' · Disconnect';
       document.getElementById('withdraw-wallet').value = wallet.account.address;
     } else {
       if (status) status.textContent = 'Not connected';
       if (btn) btn.textContent = 'Connect';
-      if (topBtn) topBtn.textContent = 'Connect';
-      if (topStatus) topStatus.textContent = 'Disconnected';
-      if (dot) dot.style.background = '#e05a5a';
+      if (topStatus) topStatus.textContent = 'Connect Wallet';
       document.getElementById('withdraw-wallet').value = '';
     }
   }
