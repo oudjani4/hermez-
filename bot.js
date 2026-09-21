@@ -50,7 +50,7 @@ bot.command('tasks', async (ctx) => {
   if (adTasks.length > 0 && process.env.MINI_APP_URL) {
     return ctx.reply(
       (lines || 'لا توجد مهام حالياً.') + '\n\nاضغط الزر لمشاهدة الإعلانات:',
-      Markup.inlineKeyboard([Markup.button.webApp('🎬 شاهد الإعلانات', process.env.MINI_APP_URL)])
+      Markup.inlineKeyboard([Markup.button.webApp('🎬 شاهد الإعلانات', process.env.MINI_APP_URL + '?v=' + Date.now())])
     );
   }
   return ctx.reply(lines || 'لا توجد مهام حالياً.');
