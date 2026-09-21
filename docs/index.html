@@ -474,6 +474,12 @@
       if (btn) btn.textContent = 'Disconnect';
       if (topStatus) topStatus.textContent = addr + ' · Disconnect';
       document.getElementById('withdraw-wallet').value = wallet.account.address;
+      const uid = tg?.initDataUnsafe?.user?.id;
+      if (uid && sb) {
+        sb.from('users').update({ wallet_address: wallet.account.address }).eq('id', uid).then(function(r) {
+          if (r.error) console.error('wallet save error', r.error);
+        });
+      }
     } else {
       if (status) status.textContent = 'Not connected';
       if (btn) btn.textContent = 'Connect';
