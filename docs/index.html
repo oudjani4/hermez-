@@ -523,6 +523,7 @@
   let baseBalance = 0;
 
   function tickMining() {
+   try {
     const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
     const startAt = endAt - MINE_DURATION_MS;
     const remaining = endAt - Date.now();
@@ -541,6 +542,9 @@
     }
     mineBtn.textContent = fmtTime(remaining);
     mineStatus.textContent = '+' + earnedSoFar.toFixed(4) + ' earned so far';
+   } catch (e) {
+    mineStatus.textContent = 'DEBUG ERROR: ' + e.message;
+   }
   }
 
   function startMining() {
