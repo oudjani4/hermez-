@@ -10,6 +10,20 @@ const referrals = require('./modules/referrals');
 const payments = require('./modules/payments');
 
 const app = express();
+app.use((req, res, next) => {
+  const allowed = (process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim());
+  const o = req.get('origin');
+  if (o && allowed.includes(o)) {
+    res.set({
+      'Access-Control-Allow-Origin': o,
+      'Access-Control-Allow-Headers': 'Content-Type,x-telegram-init-data',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      Vary: 'Origin',
+    });
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+  }
+  next();
+});
 const upgrades = require("./modules/upgrades");
 app.use("/api/upgrades", upgrades.router);
 upgrades.start();
