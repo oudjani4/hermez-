@@ -619,12 +619,80 @@
     if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
   }
 
-  document.getElementById('mine-btn').addEventListener('click', () => {
+  let currentMiningState = null;
+
+  function renderMineButton() {
     const btn = document.getElementById('mine-btn');
     const status = document.getElementById('mine-status');
+    if (!currentMiningState) return;
+
+    const s = currentMiningState;
+    if (s.session_started_at && !s.session_claimed) {
+      const startedAt = new Date(s.session_started_at);
+      const hoursElapsed = (Date.now() - startedAt.getTime()) / 3600000;
+      if (hoursElapsed >= 24) {
+        btn.disabled = false;
+        btn.textContent = 'Claim Reward';
+        btn.dataset.mode = 'claim';
+        status.textContent = 'Session complete! Claim your reward.';
+      } else {
+        btn.disabled = true;
+        btn.textContent = 'Mining...';
+        btn.dataset.mode = 'active';
+        const hoursLeft = (24 - hoursElapsed).toFixed(1);
+        status.textContent = hoursLeft + 'h remaining';
+      }
+    } else {
+      btn.disabled = false;
+      btn.textContent = 'Start Mining';
+      btn.dataset.mode = 'start';
+      status.textContent = 'Ready to mine';
+    }
+  }
+
+  async function loadState() {
+    try {
+      const data = await apiFetch('/api/state');
+      if (data.mining) {
+        currentMiningState = data.mining;
+        const balEl = document.getElementById('balance-amount');
+        if (balEl) balEl.textContent = Number(data.mining.balance || 0).toFixed(4);
+        renderMineButton();
+      }
+    } catch (e) {
+      console.error('loadState error:', e);
+    }
+  }
+  loadState();
+  setInterval(loadState, 60000);
+
+  document.getElementById('mine-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('mine-btn');
+    const status = document.getElementById('mine-status');
+    const mode = btn.dataset.mode || 'start';
+
     btn.disabled = true;
-    btn.textContent = 'Mining...';
-    status.textContent = '12-hour mining session started';
+
+    if (mode === 'start') {
+      status.textContent = 'Starting...';
+      const result = await apiFetch('/api/mine/start', { method: 'POST' });
+      if (result.ok) {
+        await loadState();
+      } else {
+        status.textContent = result.reason || 'Could not start mining.';
+        btn.disabled = false;
+      }
+    } else if (mode === 'claim') {
+      status.textContent = 'Claiming...';
+      const result = await apiFetch('/api/mine/claim', { method: 'POST' });
+      if (result.ok) {
+        status.textContent = 'Claimed ' + result.earned.toFixed(4) + ' HRZ!';
+        await loadState();
+      } else {
+        status.textContent = result.reason || 'Could not claim.';
+        btn.disabled = false;
+      }
+    }
   });
 
   function watchAd(code, btnEl) {
