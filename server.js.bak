@@ -141,7 +141,7 @@ app.post("/api/upgrade", auth, async (req, res) => {
 app.post("/api/wallet", auth, async (req, res) => {
   try {
     const { address } = req.body;
-    if (typeof address !== "string" || !/^(?:[EU]Q[A-Za-z0-9_-]{46}|-?\d:[0-9a-fA-F]{64})$/.test(address)) return res.status(400).json({ error: "invalid_address" });
+    if (!address) return res.status(400).json({ error: "missing_address" });
     await profile.setWallet(req.telegramUser.id, address);
     res.json({ ok: true });
   } catch (e) {
@@ -187,6 +187,13 @@ app.post("/api/booster/activate", auth, async (req, res) => {
   }
 });
 
+app.get("/api/debug-env", (req, res) => {
+  res.json({
+    hasBotToken: !!process.env.BOT_TOKEN,
+    hasSupabase: !!process.env.SUPABASE_URL,
+    hasTonWallet: !!process.env.PROJECT_TON_WALLET,
+  });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
