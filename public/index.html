@@ -492,6 +492,10 @@
         ...(options.headers || {})
       }
     });
+    if (!res.ok) {
+      const text = await res.text();
+      alert('API ERROR ' + res.status + ' on ' + path + ': ' + text);
+    }
     return res.json();
   }
 
