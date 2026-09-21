@@ -319,19 +319,19 @@
     <div class="panel-title">Tasks</div>
     <div class="card card-flex">
       <div><div class="row-title">Watch Ad 1</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" onclick="watchAd('monetag_view_1', this)">Watch</button>
+      <button class="task-btn" id="task-btn-1" onclick="watchAd('monetag_view_1', this)">Watch</button>
     </div>
     <div class="card card-flex">
       <div><div class="row-title">Watch Ad 2</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" onclick="watchAd('monetag_view_2', this)">Watch</button>
+      <button class="task-btn" id="task-btn-2" onclick="watchAd('monetag_view_2', this)">Watch</button>
     </div>
     <div class="card card-flex">
       <div><div class="row-title">Watch Ad 3</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" onclick="watchAd('monetag_view_3', this)">Watch</button>
+      <button class="task-btn" id="task-btn-3" onclick="watchAd('monetag_view_3', this)">Watch</button>
     </div>
     <div class="card card-flex">
       <div><div class="row-title">Watch Ad 4</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" onclick="watchAd('monetag_view_4', this)">Watch</button>
+      <button class="task-btn" id="task-btn-4" onclick="watchAd('monetag_view_4', this)">Watch</button>
     </div>
     <div class="mine-status" id="task-status"></div>
   </section>
@@ -699,6 +699,28 @@
     }
   });
 
+  const TASK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
+  const TASK_CODES = ['monetag_view_1','monetag_view_2','monetag_view_3','monetag_view_4'];
+
+  function refreshTaskButtons() {
+    TASK_CODES.forEach((code, idx) => {
+      const btn = document.getElementById('task-btn-' + (idx+1));
+      const last = parseInt(localStorage.getItem('hermez_task_' + code) || '0', 10);
+      const remaining = (last + TASK_COOLDOWN_MS) - Date.now();
+      if (remaining > 0) {
+        btn.disabled = true;
+        const h = Math.floor(remaining / 3600000);
+        const m = Math.floor((remaining % 3600000) / 60000);
+        btn.textContent = h + 'h ' + m + 'm';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Watch';
+      }
+    });
+  }
+  refreshTaskButtons();
+  setInterval(refreshTaskButtons, 60000);
+
   function watchAd(code, btnEl) {
     const status = document.getElementById('task-status');
     status.textContent = 'Loading ad...';
@@ -714,6 +736,8 @@
       baseBalance += TASK_REWARD;
       balanceEl.textContent = baseBalance.toFixed(8);
       localStorage.setItem('hermez_base_balance', String(baseBalance));
+      localStorage.setItem('hermez_task_' + code, String(Date.now()));
+      refreshTaskButtons();
       if (tg) tg.sendData(JSON.stringify({ action: 'complete_task', code }));
     }).catch(() => {
       status.textContent = 'Ad was not completed.';
