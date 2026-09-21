@@ -69,7 +69,7 @@ function verifyInitData(initData) {
 }
 
 function auth(req, res, next) {
-  const uid = verifyInitData(req.get('x-init-data'));
+  const uid = verifyInitData(req.get('x-telegram-init-data'));
   if (!uid) return res.status(401).json({ error: 'unauthorized' });
   req.uid = uid;
   next();
@@ -136,7 +136,7 @@ router.use((req, res, next) => {
   if (o && allowed.includes(o)) {
     res.set({
       'Access-Control-Allow-Origin': o,
-      'Access-Control-Allow-Headers': 'Content-Type,x-init-data',
+      'Access-Control-Allow-Headers': 'Content-Type,x-telegram-init-data',
       'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
       Vary: 'Origin',
     });
