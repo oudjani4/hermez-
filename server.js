@@ -150,6 +150,43 @@ app.post("/api/wallet", auth, async (req, res) => {
   }
 });
 
+app.get("/api/boosters", auth, async (req, res) => {
+  try {
+    const { supabase } = require('./shared/db');
+    const { data, error } = await supabase.from('boosters').select('*').order('id', { ascending: true });
+    if (error) throw error;
+    res.json(data);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
+app.post("/api/booster/activate", auth, async (req, res) => {
+  try {
+    const userId = req.telegramUser.id;
+    const { boosterId, senderAddress } = req.body;
+    if (!boosterId || !senderAddress) return res.status(400).json({ error: "missing_params" });
+
+    const { supabase } = require('./shared/db');
+    const { data: booster, error: bErr } = await supabase.from('boosters').select('*').eq('id', boosterId).single();
+    if (bErr || !booster) return res.status(400).json({ error: "booster_not_found" });
+
+    const found = await payments.findMatchingTransaction(senderAddress, booster.cost);
+    if (!found.ok) {
+      return res.json(found);
+    }
+
+    await payments.markTxUsed(found.hash, userId, `booster_${boosterId}`);
+    const result = await mining.activateBooster(userId, booster.multiplier, booster.duration_hours);
+
+    res.json({ ok: true, ...result, multiplier: booster.multiplier });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`hermez mini app server running on port ${PORT}`);

@@ -151,4 +151,22 @@ async function purchaseUpgrade(userId, targetLevel) {
   return { ok: true, newBalance, newLevel: targetLevel };
 }
 
-module.exports = { getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade };
+
+function activeBoosterMultiplier(state) {
+  if (state.booster_expires_at && new Date(state.booster_expires_at) > new Date()) {
+    return Number(state.booster_multiplier) || 1;
+  }
+  return 1;
+}
+
+async function activateBooster(userId, multiplier, durationHours) {
+  const expiresAt = new Date(Date.now() + durationHours * 3600000).toISOString();
+  const { error } = await supabase
+    .from('mining_state')
+    .update({ booster_multiplier: multiplier, booster_expires_at: expiresAt })
+    .eq('user_id', userId);
+  if (error) throw error;
+  return { ok: true, expiresAt };
+}
+
+module.exports = { getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade, activeBoosterMultiplier, activateBooster };
