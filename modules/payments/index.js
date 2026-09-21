@@ -133,4 +133,24 @@ async function markTxUsed(txHash, userId, purpose) {
   if (error) throw error;
 }
 
-module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWithdrawal, verifyTonTransaction, isTxAlreadyUsed, markTxUsed };
+
+async function findMatchingTransaction(senderAddress, expectedAmountTon) {
+  const url = `https://toncenter.com/api/v3/transactions?account=${PROJECT_TON_WALLET}&limit=20&sort=desc`;
+  const res = await fetch(url, { headers: { "X-API-Key": TONCENTER_API_KEY } });
+  const data = await res.json();
+  if (!data.transactions) return { ok: false, reason: "no_transactions" };
+
+  for (const tx of data.transactions) {
+    const inMsg = tx.in_msg;
+    if (!inMsg || !inMsg.source) continue;
+    if (inMsg.source !== senderAddress) continue;
+    const amountTon = Number(inMsg.value) / 1e9;
+    if (amountTon < expectedAmountTon) continue;
+    const used = await isTxAlreadyUsed(tx.hash);
+    if (used) continue;
+    return { ok: true, hash: tx.hash, amount: amountTon };
+  }
+  return { ok: false, reason: "tx_not_found" };
+}
+
+module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWithdrawal, verifyTonTransaction, findMatchingTransaction, isTxAlreadyUsed, markTxUsed };

@@ -106,25 +106,26 @@ app.get('/api/upgrade-cost', auth, async (req, res) => {
   }
 });
 
+app.get("/api/project-wallet", (req, res) => {
+  res.json({ address: process.env.PROJECT_TON_WALLET });
+});
+
 app.post("/api/upgrade", auth, async (req, res) => {
   try {
     const userId = req.telegramUser.id;
-    const { tx_hash } = req.body;
-    if (!tx_hash) return res.status(400).json({ error: "missing_tx_hash" });
-
-    const alreadyUsed = await payments.isTxAlreadyUsed(tx_hash);
-    if (alreadyUsed) return res.status(400).json({ error: "tx_already_used" });
+    const { senderAddress } = req.body;
+    if (!senderAddress) return res.status(400).json({ error: "missing_sender_address" });
 
     const m = await mining.getState(userId);
     const targetLevel = m.level + 1;
     const upgrade = await payments.getUpgradeCost(targetLevel);
 
-    const verify = await payments.verifyTonTransaction(tx_hash, upgrade.cost);
-    if (!verify.ok) {
-      return res.json(verify);
+    const found = await payments.findMatchingTransaction(senderAddress, upgrade.cost);
+    if (!found.ok) {
+      return res.json(found);
     }
 
-    await payments.markTxUsed(tx_hash, userId, `upgrade_level_${targetLevel}`);
+    await payments.markTxUsed(found.hash, userId, `upgrade_level_${targetLevel}`);
     const setResult = await mining.setLevel(userId, targetLevel);
     if (!setResult.ok) {
       return res.json(setResult);

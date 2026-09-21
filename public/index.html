@@ -430,8 +430,73 @@
     if (tg) tg.sendData(JSON.stringify({ action: 'request_booster', id: id }));
   }
 
-  function requestUpgrade(level) {
-    if (tg) tg.sendData(JSON.stringify({ action: 'request_upgrade', level }));
+  function getInitData() {
+    return tg && tg.initData ? tg.initData : '';
+  }
+
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-telegram-init-data': getInitData(),
+        ...(options.headers || {})
+      }
+    });
+    return res.json();
+  }
+
+  async function requestUpgrade(level) {
+    if (!tonConnectUI.connected) {
+      alert('Connect your TON wallet first.');
+      tonConnectUI.openModal();
+      return;
+    }
+
+    try {
+      const walletRes = await fetch('/api/project-wallet');
+      const walletData = await walletRes.json();
+      if (!walletData.address) {
+        alert('Server wallet not configured.');
+        return;
+      }
+
+      const upgradeRow = Array.from(document.querySelectorAll('.card-flex')).find(c => c.querySelector(`button[onclick="requestUpgrade(${level})"]`));
+      const costMatch = upgradeRow ? upgradeRow.textContent.match(/Cost:\s*([0-9.]+)/) : null;
+      const cost = costMatch ? parseFloat(costMatch[1]) : null;
+      if (!cost) {
+        alert('Could not determine upgrade cost.');
+        return;
+      }
+
+      const nanoAmount = Math.ceil(cost * 1e9).toString();
+
+      await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: walletData.address, amount: nanoAmount }]
+      });
+
+      alert('Transaction sent. Verifying...');
+
+      const senderAddress = tonConnectUI.wallet.account.address;
+
+      setTimeout(async () => {
+        const result = await apiFetch('/api/upgrade', {
+          method: 'POST',
+          body: JSON.stringify({ senderAddress })
+        });
+        if (result.ok) {
+          alert('Upgraded to level ' + result.level + '!');
+          loadUpgrades();
+        } else {
+          alert('Upgrade failed: ' + (result.reason || 'unknown_error'));
+        }
+      }, 15000);
+
+    } catch (e) {
+      console.error(e);
+      alert('Transaction cancelled or failed.');
+    }
   }
 
   const screens = document.querySelectorAll('.screen');
