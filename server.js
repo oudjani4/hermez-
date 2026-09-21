@@ -187,6 +187,14 @@ app.post("/api/booster/activate", auth, async (req, res) => {
   }
 });
 
+app.get("/api/debug-env", (req, res) => {
+  res.json({
+    hasBotToken: !!process.env.BOT_TOKEN,
+    hasSupabase: !!process.env.SUPABASE_URL,
+    hasTonWallet: !!process.env.PROJECT_TON_WALLET,
+  });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`hermez mini app server running on port ${PORT}`);
