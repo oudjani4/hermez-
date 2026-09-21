@@ -667,7 +667,9 @@
       console.error('loadState error:', e);
     }
   }
+  alert('BEFORE loadState call');
   loadState();
+  alert('AFTER loadState call (async still running)');
   setInterval(loadState, 60000);
 
   document.getElementById('mine-btn').addEventListener('click', async () => {
