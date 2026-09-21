@@ -599,6 +599,10 @@
       status.textContent = 'Done! Recording your reward...';
       btnEl.disabled = true;
       btnEl.textContent = 'Done ✅';
+      const TASK_REWARD = 5;
+      baseBalance += TASK_REWARD;
+      balanceEl.textContent = baseBalance.toFixed(8);
+      localStorage.setItem('hermez_base_balance', String(baseBalance));
       if (tg) tg.sendData(JSON.stringify({ action: 'complete_task', code }));
     }).catch(() => {
       status.textContent = 'Ad was not completed.';
