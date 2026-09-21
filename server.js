@@ -11,6 +11,7 @@ const payments = require('./modules/payments');
 
 const app = express();
 app.use(express.json());
+app.post(["/api/upgrade","/api/booster/activate"], (req,res)=>res.status(503).json({error:"manual_only"}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function auth(req, res, next) {

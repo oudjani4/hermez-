@@ -505,13 +505,69 @@
     if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
   }
 
-  document.getElementById('mine-btn').addEventListener('click', () => {
-    const btn = document.getElementById('mine-btn');
-    const status = document.getElementById('mine-status');
-    btn.disabled = true;
-    btn.textContent = 'Mining...';
-    status.textContent = '12-hour mining session started';
-  });
+  const MINE_DURATION_MS = 12 * 60 * 60 * 1000;
+  const mineBtn = document.getElementById('mine-btn');
+  const mineStatus = document.getElementById('mine-status');
+  let mineTimer = null;
+
+  function fmtTime(ms) {
+    const total = Math.max(0, Math.floor(ms / 1000));
+    const h = String(Math.floor(total / 3600)).padStart(2, '0');
+    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
+    const s = String(total % 60).padStart(2, '0');
+    return h + ':' + m + ':' + s;
+  }
+
+  function tickMining() {
+    const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
+    const remaining = endAt - Date.now();
+    if (remaining <= 0) {
+      clearInterval(mineTimer);
+      mineTimer = null;
+      mineBtn.disabled = false;
+      mineBtn.textContent = 'Claim';
+      mineStatus.textContent = 'Mining complete — ready to claim';
+      mineBtn.onclick = claimMining;
+      return;
+    }
+    mineBtn.textContent = fmtTime(remaining);
+    mineStatus.textContent = 'Mining in progress';
+  }
+
+  function startMining() {
+    const endAt = Date.now() + MINE_DURATION_MS;
+    localStorage.setItem('hermez_mine_end', String(endAt));
+    mineBtn.disabled = true;
+    mineBtn.onclick = null;
+    if (mineTimer) clearInterval(mineTimer);
+    mineTimer = setInterval(tickMining, 1000);
+    tickMining();
+  }
+
+  function claimMining() {
+    localStorage.removeItem('hermez_mine_end');
+    mineBtn.disabled = false;
+    mineBtn.textContent = 'Start Mining';
+    mineStatus.textContent = 'Ready to mine';
+    mineBtn.onclick = startMining;
+    if (tg) tg.sendData(JSON.stringify({ action: 'claim_mining' }));
+  }
+
+  (function initMiningState() {
+    const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
+    if (endAt && endAt > Date.now()) {
+      mineBtn.disabled = true;
+      mineTimer = setInterval(tickMining, 1000);
+      tickMining();
+    } else if (endAt && endAt <= Date.now()) {
+      mineBtn.disabled = false;
+      mineBtn.textContent = 'Claim';
+      mineStatus.textContent = 'Mining complete — ready to claim';
+      mineBtn.onclick = claimMining;
+    } else {
+      mineBtn.onclick = startMining;
+    }
+  })();
 
   function watchAd(code, btnEl) {
     const status = document.getElementById('task-status');

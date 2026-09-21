@@ -1,0 +1,294 @@
+./modules/payments/index.js:27:async function requestWithdrawal(userId, amount) {
+./modules/payments/index.js:54:async function approveWithdrawal(withdrawalId) {
+./modules/payments/index.js:156:module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWithdrawal, verifyTonTransaction, findMatchingTransaction, isTxAlreadyUsed, markTxUsed };
+----PAY
+  const upgrade = await getUpgradeCost(targetLevel);
+  if (currentBalance < upgrade.cost) {
+    return { ok: false, reason: 'insufficient_balance', needed: upgrade.cost };
+  }
+  return { ok: true, cost: upgrade.cost, bonus: upgrade.mining_rate_bonus };
+}
+
+async function requestWithdrawal(userId, amount) {
+  const MIN_WITHDRAWAL = 500;
+  if (amount < MIN_WITHDRAWAL) {
+    return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
+  }
+
+  const { data: reserve, error: reserveErr } = await supabase
+    .from('reserve_wallet')
+    .select('balance')
+    .eq('id', 1)
+    .single();
+  if (reserveErr) throw reserveErr;
+
+  if (reserve.balance < amount) {
+    return { ok: false, reason: 'reserve_insolvent' };
+  }
+
+  const { data, error } = await supabase
+    .from('withdrawals')
+    .insert({ user_id: userId, amount, status: 'pending' })
+    .select()
+    .single();
+  if (error) throw error;
+
+  return { ok: true, withdrawal: data };
+}
+
+async function approveWithdrawal(withdrawalId) {
+  const { data: w, error: wErr } = await supabase
+    .from('withdrawals')
+    .select('*')
+    .eq('id', withdrawalId)
+    .single();
+  if (wErr) throw wErr;
+  if (w.status !== 'pending') return { ok: false, reason: 'not_pending' };
+
+  const { data: reserve, error: reserveErr } = await supabase
+    .from('reserve_wallet')
+    .select('balance')
+    .eq('id', 1)
+    .single();
+  if (reserveErr) throw reserveErr;
+
+  if (reserve.balance < w.amount) {
+    return { ok: false, reason: 'reserve_insolvent' };
+  }
+
+  await supabase.from('reserve_wallet').update({ balance: reserve.balance - w.amount }).eq('id', 1);
+  await supabase
+    .from('withdrawals')
+    .update({ status: 'paid', processed_at: new Date().toISOString() })
+    .eq('id', withdrawalId);
+
+  return { ok: true };
+}
+
+
+// ===== التحقق من معاملات TON على البلوكتشين =====
+const TONCENTER_API_KEY = process.env.TONCENTER_API_KEY;
+const PROJECT_TON_WALLET = process.env.PROJECT_TON_WALLET;
+
+async function verifyTonTransaction(txHash, expectedAmountTon) {
+  const url = `https://toncenter.com/api/v3/transactions?hash=${txHash}`;
+  const res = await fetch(url, {
+----MINING
+// modules/mining/index.js
+// هذا الملف يلمس جدول mining_state بس. أي شي يخص المهام/الإحالات/الدفعات
+// ما يكتب هنا — يستورد من module الثاني إذا احتاج قيمة منه.
+
+const { supabase } = require('../../shared/db');
+
+const SESSION_HOURS = 24;
+const BASE_RATE = 10 / 86400; // 10 HRZ لكل 24 ساعة عند level 1
+const MAX_LEVEL = 25;
+
+function rateForLevel(level) {
+  return BASE_RATE * (1 + (level - 1) * 0.05);
+}
+
+async function getState(userId) {
+  const { data, error } = await supabase
+    .from('mining_state')
+    .select('*')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw error;
+
+  if (!data) {
+    const { data: created, error: insErr } = await supabase
+      .from('mining_state')
+      .insert({ user_id: userId, level: 1, balance: 0 })
+      .select()
+      .single();
+    if (insErr) throw insErr;
+    return created;
+  }
+  return data;
+}
+
+async function startSession(userId) {
+  const state = await getState(userId);
+
+  if (state.session_started_at && !state.session_claimed) {
+    const startedAt = new Date(state.session_started_at);
+    const hoursElapsed = (Date.now() - startedAt.getTime()) / 3600000;
+    if (hoursElapsed < SESSION_HOURS) {
+      return { ok: false, reason: 'session_active', hoursRemaining: SESSION_HOURS - hoursElapsed };
+    }
+  }
+
+  const { error } = await supabase
+    .from('mining_state')
+    .update({ session_started_at: new Date().toISOString(), session_claimed: false })
+    .eq('user_id', userId);
+  if (error) throw error;
+
+  return { ok: true };
+}
+
+async function claimSession(userId) {
+  const state = await getState(userId);
+
+  if (!state.session_started_at || state.session_claimed) {
+    return { ok: false, reason: 'no_active_session' };
+  }
+
+  const startedAt = new Date(state.session_started_at);
+  const hoursElapsed = (Date.now() - startedAt.getTime()) / 3600000;
+  const cappedHours = Math.min(hoursElapsed, SESSION_HOURS);
+  const earned = cappedHours * 3600 * rateForLevel(state.level);
+
+  const { error } = await supabase
+    .from('mining_state')
+    .update({
+      balance: state.balance + earned,
+      session_claimed: true,
+    })
+    .eq('user_id', userId);
+  if (error) throw error;
+
+  return { ok: true, earned };
+}
+
+// upgrades تستدعي هذي الدالة بس، مو توصل لجدول mining_state مباشرة
+async function setLevel(userId, newLevel) {
+  if (newLevel > MAX_LEVEL) {
+    return { ok: false, reason: "max_level_reached" };
+  }
+  const { error } = await supabase
+    .from('mining_state')
+    .update({ level: newLevel })
+    .eq('user_id', userId);
+  if (error) throw error;
+  return { ok: true };
+}
+
+
+async function addBalance(userId, amount) {
+  const { data: state, error: getErr } = await supabase
+    .from('mining_state')
+    .select('balance')
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (getErr) throw getErr;
+
+  if (!state) {
+    const { error: insErr } = await supabase
+      .from('mining_state')
+      .insert({ user_id: userId, balance: amount });
+    if (insErr) throw insErr;
+    return amount;
+  }
+
+  const newBalance = Number(state.balance) + amount;
+  const { error: updErr } = await supabase
+    .from('mining_state')
+    .update({ balance: newBalance })
+    .eq('user_id', userId);
+  if (updErr) throw updErr;
+  return newBalance;
+}
+
+
+async function purchaseUpgrade(userId, targetLevel) {
+  if (targetLevel > MAX_LEVEL) {
+    return { ok: false, reason: "max_level_reached" };
+  }
+
+  const { data: upgrade, error: upErr } = await supabase
+    .from('upgrades')
+    .select('*')
+    .eq('level', targetLevel)
+    .maybeSingle();
+  if (upErr) throw upErr;
+  if (!upgrade) {
+    return { ok: false, reason: "upgrade_not_found" };
+  }
+
+  const state = await getState(userId);
+
+  if (state.level !== targetLevel - 1) {
+    return { ok: false, reason: "wrong_level" };
+  }
+
+  if (Number(state.balance) < Number(upgrade.cost)) {
+    return { ok: false, reason: "insufficient_balance" };
+  }
+
+  const newBalance = Number(state.balance) - Number(upgrade.cost);
+  const { error: updErr } = await supabase
+    .from('mining_state')
+    .update({ balance: newBalance, level: targetLevel })
+    .eq('user_id', userId);
+  if (updErr) throw updErr;
+
+  return { ok: true, newBalance, newLevel: targetLevel };
+}
+
+
+function activeBoosterMultiplier(state) {
+  if (state.booster_expires_at && new Date(state.booster_expires_at) > new Date()) {
+    return Number(state.booster_multiplier) || 1;
+  }
+  return 1;
+}
+
+async function activateBooster(userId, multiplier, durationHours) {
+  const expiresAt = new Date(Date.now() + durationHours * 3600000).toISOString();
+  const { error } = await supabase
+    .from('mining_state')
+    .update({ booster_multiplier: multiplier, booster_expires_at: expiresAt })
+    .eq('user_id', userId);
+  if (error) throw error;
+  return { ok: true, expiresAt };
+}
+
+module.exports = { getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade, activeBoosterMultiplier, activateBooster };
+----TASKS
+// modules/tasks/index.js
+// يلمس جدولي tasks و task_completions بس.
+
+const { supabase } = require('../../shared/db');
+
+async function listActiveTasks() {
+  const { data, error } = await supabase.from('tasks').select('*').eq('active', true);
+  if (error) throw error;
+  return data;
+}
+
+async function isCompleted(userId, taskId) {
+  const { data, error } = await supabase
+    .from('task_completions')
+    .select('user_id')
+    .eq('user_id', userId)
+    .eq('task_id', taskId)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+// يرجع reward بس، ما يعدل رصيد المستخدم هنا — الاستدعاء الخارجي (bot.js)
+// هو اللي يضيف الـ reward لرصيد التعدين عن طريق mining module
+async function completeTask(userId, taskId) {
+  const already = await isCompleted(userId, taskId);
+  if (already) return { ok: false, reason: 'already_completed' };
+
+  const { data: task, error: taskErr } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('id', taskId)
+    .single();
+  if (taskErr) throw taskErr;
+  if (!task.active) return { ok: false, reason: 'task_inactive' };
+
+  const { error } = await supabase
+    .from('task_completions')
+    .insert({ user_id: userId, task_id: taskId });
+  if (error) throw error; // unique constraint يمنع تكرار حتى لو صار race condition
+
+  return { ok: true, reward: task.reward };
+}
+
+module.exports = { listActiveTasks, isCompleted, completeTask };
