@@ -130,6 +130,19 @@ async function scan() {
 
 // ---------- API ----------
 const router = express.Router();
+router.use((req, res, next) => {
+  const o = req.get('origin');
+  if (o && o === process.env.ALLOWED_ORIGIN) {
+    res.set({
+      'Access-Control-Allow-Origin': o,
+      'Access-Control-Allow-Headers': 'Content-Type,x-init-data',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      Vary: 'Origin',
+    });
+  }
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+});
 router.use(express.json());
 
 router.get('/catalog', (req, res) => res.json({ levels: LEVELS, boosters: BOOSTERS }));
@@ -180,7 +193,7 @@ router.post('/verify', auth, async (req, res) => {
 });
 
 function start() {
-  if (!CFG.treasury) throw new Error('TON_TREASURY_ADDRESS is not set');
+  if (!CFG.treasury) { console.error("[upgrades] TON_TREASURY_ADDRESS missing, payments disabled"); return; }
   setInterval(() => scan().catch((e) => console.error('[upgrades]', e.message)), CFG.pollMs);
 }
 

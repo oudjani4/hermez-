@@ -6,7 +6,7 @@ const HermezUpgrades = (() => {
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function api(p, body) {
-    const r = await fetch('/api/upgrades' + p, {
+    const r = await fetch('https://hermez-backend.onrender.com/api/upgrades' + p, {
       method: body ? 'POST' : 'GET',
       headers: { 'Content-Type': 'application/json', 'x-init-data': TG.initData },
       body: body ? JSON.stringify(body) : undefined,
