@@ -132,7 +132,8 @@ async function scan() {
 const router = express.Router();
 router.use((req, res, next) => {
   const o = req.get('origin');
-  if (o && o === process.env.ALLOWED_ORIGIN) {
+  const allowed = (process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim());
+  if (o && allowed.includes(o)) {
     res.set({
       'Access-Control-Allow-Origin': o,
       'Access-Control-Allow-Headers': 'Content-Type,x-init-data',
