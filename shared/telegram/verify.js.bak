@@ -27,10 +27,13 @@ function verifyInitData(initData, botToken) {
       .update(dataCheckString)
       .digest('hex');
 
-    if (!hash || computedHash.length !== hash.length || !require('crypto').timingSafeEqual(Buffer.from(computedHash), Buffer.from(hash))) return null;
+    if (computedHash !== hash) return null;
 
     const authDate = Number(params.get('auth_date'));
-    if (!authDate || Date.now() / 1000 - authDate > 43200) return null;
+    if (authDate) {
+      const ageSeconds = Date.now() / 1000 - authDate;
+      if (ageSeconds > 86400) return null;
+    }
 
     const userRaw = params.get('user');
     if (!userRaw) return null;
