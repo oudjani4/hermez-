@@ -518,20 +518,29 @@
     return h + ':' + m + ':' + s;
   }
 
+  const MINE_TOTAL_REWARD = 10;
+  const balanceEl = document.getElementById('balance-amount');
+  let baseBalance = 0;
+
   function tickMining() {
     const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
+    const startAt = endAt - MINE_DURATION_MS;
     const remaining = endAt - Date.now();
+    const elapsed = Math.min(MINE_DURATION_MS, Math.max(0, Date.now() - startAt));
+    const earnedSoFar = (elapsed / MINE_DURATION_MS) * MINE_TOTAL_REWARD;
+    balanceEl.textContent = (baseBalance + earnedSoFar).toFixed(4);
+
     if (remaining <= 0) {
       clearInterval(mineTimer);
       mineTimer = null;
       mineBtn.disabled = false;
       mineBtn.textContent = 'Claim';
-      mineStatus.textContent = 'Mining complete — ready to claim';
+      mineStatus.textContent = 'Mining complete — ready to claim +' + MINE_TOTAL_REWARD.toFixed(4);
       mineBtn.onclick = claimMining;
       return;
     }
     mineBtn.textContent = fmtTime(remaining);
-    mineStatus.textContent = 'Mining in progress';
+    mineStatus.textContent = '+' + earnedSoFar.toFixed(4) + ' earned so far';
   }
 
   function startMining() {
@@ -545,6 +554,9 @@
   }
 
   function claimMining() {
+    baseBalance += MINE_TOTAL_REWARD;
+    balanceEl.textContent = baseBalance.toFixed(4);
+    localStorage.setItem('hermez_base_balance', String(baseBalance));
     localStorage.removeItem('hermez_mine_end');
     mineBtn.disabled = false;
     mineBtn.textContent = 'Start Mining';
@@ -552,6 +564,9 @@
     mineBtn.onclick = startMining;
     if (tg) tg.sendData(JSON.stringify({ action: 'claim_mining' }));
   }
+
+  baseBalance = parseFloat(localStorage.getItem('hermez_base_balance') || '0');
+  balanceEl.textContent = baseBalance.toFixed(4);
 
   (function initMiningState() {
     const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
