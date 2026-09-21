@@ -529,7 +529,7 @@
     const remaining = endAt - Date.now();
     const elapsed = Math.min(MINE_DURATION_MS, Math.max(0, Date.now() - startAt));
     const earnedSoFar = (elapsed / MINE_DURATION_MS) * MINE_TOTAL_REWARD;
-    balanceEl.textContent = (baseBalance + earnedSoFar).toFixed(4);
+    balanceEl.textContent = (baseBalance + earnedSoFar).toFixed(8);
 
     if (remaining <= 0) {
       clearInterval(mineTimer);
@@ -541,7 +541,7 @@
       return;
     }
     mineBtn.textContent = fmtTime(remaining);
-    mineStatus.textContent = '+' + earnedSoFar.toFixed(4) + ' earned so far';
+    mineStatus.textContent = '+' + earnedSoFar.toFixed(8) + ' earned so far';
    } catch (e) {
     mineStatus.textContent = 'DEBUG ERROR: ' + e.message;
    }
