@@ -428,6 +428,7 @@
   loadBoosters();
 
   async function requestBooster(id) {
+    alert('requestBooster called, id=' + id);
     if (!tonConnectUI.connected) {
       alert('Connect your TON wallet first.');
       tonConnectUI.openModal();
