@@ -364,6 +364,8 @@
   </nav>
 
 <script>
+  <script>window.onerror=function(m,s,l,c){document.title="ERR: "+m+" @ "+l+":"+c;alert("JS ERROR: "+m+" line "+l);};</script>
+  <script>document.addEventListener("click", function(e){alert("Clicked: " + e.target.tagName + " class=" + e.target.className);}, true);</script>
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
@@ -426,12 +428,132 @@
   }
   loadBoosters();
 
-  function requestBooster(id) {
-    if (tg) tg.sendData(JSON.stringify({ action: 'request_booster', id: id }));
+  async function requestBooster(id) {
+    alert('requestBooster called, id=' + id);
+    if (!tonConnectUI.connected) {
+      alert('Connect your TON wallet first.');
+      tonConnectUI.openModal();
+      return;
+    }
+
+    try {
+      const walletRes = await fetch(API_BASE + '/api/project-wallet');
+      const walletData = await walletRes.json();
+      if (!walletData.address) {
+        alert('Server wallet not configured.');
+        return;
+      }
+
+      const boosterRow = Array.from(document.querySelectorAll('.card-flex')).find(c => c.querySelector(`button[onclick="requestBooster(${id})"]`));
+      const costMatch = boosterRow ? boosterRow.textContent.match(/Cost:\s*([0-9.]+)/) : null;
+      const cost = costMatch ? parseFloat(costMatch[1]) : null;
+      if (!cost) {
+        alert('Could not determine booster cost.');
+        return;
+      }
+
+      const nanoAmount = Math.ceil(cost * 1e9).toString();
+
+      await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: walletData.address, amount: nanoAmount }]
+      });
+
+      alert('Transaction sent. Verifying...');
+
+      const senderAddress = tonConnectUI.wallet.account.address;
+
+      setTimeout(async () => {
+        const result = await apiFetch('/api/booster/activate', {
+          method: 'POST',
+          body: JSON.stringify({ boosterId: id, senderAddress })
+        });
+        if (result.ok) {
+          alert('Booster activated! x' + result.multiplier + ' mining speed.');
+          loadBoosters();
+        } else {
+          alert('Activation failed: ' + (result.reason || 'unknown_error'));
+        }
+      }, 15000);
+
+    } catch (e) {
+      console.error(e);
+      alert('Transaction cancelled or failed.');
+    }
   }
 
-  function requestUpgrade(level) {
-    if (tg) tg.sendData(JSON.stringify({ action: 'request_upgrade', level }));
+  function getInitData() {
+    return tg && tg.initData ? tg.initData : '';
+  }
+
+  const API_BASE = 'https://hermez-backend.onrender.com';
+  async function apiFetch(path, options = {}) {
+    const res = await fetch(API_BASE + path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-telegram-init-data': getInitData(),
+        ...(options.headers || {})
+      }
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      alert('API ERROR ' + res.status + ' on ' + path + ': ' + text);
+    }
+    return res.json();
+  }
+
+  async function requestUpgrade(level) {
+    if (!tonConnectUI.connected) {
+      alert('Connect your TON wallet first.');
+      tonConnectUI.openModal();
+      return;
+    }
+
+    try {
+      const walletRes = await fetch(API_BASE + '/api/project-wallet');
+      const walletData = await walletRes.json();
+      if (!walletData.address) {
+        alert('Server wallet not configured.');
+        return;
+      }
+
+      const upgradeRow = Array.from(document.querySelectorAll('.card-flex')).find(c => c.querySelector(`button[onclick="requestUpgrade(${level})"]`));
+      const costMatch = upgradeRow ? upgradeRow.textContent.match(/Cost:\s*([0-9.]+)/) : null;
+      const cost = costMatch ? parseFloat(costMatch[1]) : null;
+      if (!cost) {
+        alert('Could not determine upgrade cost.');
+        return;
+      }
+
+      const nanoAmount = Math.ceil(cost * 1e9).toString();
+
+      await tonConnectUI.sendTransaction({
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [{ address: walletData.address, amount: nanoAmount }]
+      });
+
+      alert('Transaction sent. Verifying...');
+
+      const senderAddress = tonConnectUI.wallet.account.address;
+
+      setTimeout(async () => {
+        const result = await apiFetch('/api/upgrade', {
+          method: 'POST',
+          body: JSON.stringify({ senderAddress })
+        });
+        if (result.ok) {
+          alert('Upgraded to level ' + result.level + '!');
+          loadUpgrades();
+        } else {
+          alert('Upgrade failed: ' + (result.reason || 'unknown_error'));
+        }
+      }, 15000);
+
+    } catch (e) {
+      console.error(e);
+      alert('Transaction cancelled or failed.');
+    }
   }
 
   const screens = document.querySelectorAll('.screen');
@@ -511,88 +633,81 @@
     if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
   }
 
-  const MINE_DURATION_MS = 12 * 60 * 60 * 1000;
-  const mineBtn = document.getElementById('mine-btn');
-  const mineStatus = document.getElementById('mine-status');
-  let mineTimer = null;
+  let currentMiningState = null;
 
-  function fmtTime(ms) {
-    const total = Math.max(0, Math.floor(ms / 1000));
-    const h = String(Math.floor(total / 3600)).padStart(2, '0');
-    const m = String(Math.floor((total % 3600) / 60)).padStart(2, '0');
-    const s = String(total % 60).padStart(2, '0');
-    return h + ':' + m + ':' + s;
-  }
+  function renderMineButton() {
+    const btn = document.getElementById('mine-btn');
+    const status = document.getElementById('mine-status');
+    if (!currentMiningState) return;
 
-  const MINE_TOTAL_REWARD = 10;
-  const balanceEl = document.getElementById('balance-amount');
-  let baseBalance = 0;
-
-  function tickMining() {
-   try {
-    const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
-    const startAt = endAt - MINE_DURATION_MS;
-    const remaining = endAt - Date.now();
-    const elapsed = Math.min(MINE_DURATION_MS, Math.max(0, Date.now() - startAt));
-    const earnedSoFar = (elapsed / MINE_DURATION_MS) * MINE_TOTAL_REWARD;
-    balanceEl.textContent = (baseBalance + earnedSoFar).toFixed(8);
-
-    if (remaining <= 0) {
-      clearInterval(mineTimer);
-      mineTimer = null;
-      mineBtn.disabled = false;
-      mineBtn.textContent = 'Claim';
-      mineStatus.textContent = 'Mining complete — ready to claim +' + MINE_TOTAL_REWARD.toFixed(4);
-      mineBtn.onclick = claimMining;
-      return;
-    }
-    mineBtn.textContent = fmtTime(remaining);
-    mineStatus.textContent = '+' + earnedSoFar.toFixed(8) + ' earned so far';
-   } catch (e) {
-    mineStatus.textContent = 'DEBUG ERROR: ' + e.message;
-   }
-  }
-
-  function startMining() {
-    const endAt = Date.now() + MINE_DURATION_MS;
-    localStorage.setItem('hermez_mine_end', String(endAt));
-    mineBtn.disabled = true;
-    mineBtn.onclick = null;
-    if (mineTimer) clearInterval(mineTimer);
-    mineTimer = setInterval(tickMining, 1000);
-    tickMining();
-  }
-
-  function claimMining() {
-    baseBalance += MINE_TOTAL_REWARD;
-    balanceEl.textContent = baseBalance.toFixed(4);
-    localStorage.setItem('hermez_base_balance', String(baseBalance));
-    localStorage.removeItem('hermez_mine_end');
-    mineBtn.disabled = false;
-    mineBtn.textContent = 'Start Mining';
-    mineStatus.textContent = 'Ready to mine';
-    mineBtn.onclick = startMining;
-    if (tg) tg.sendData(JSON.stringify({ action: 'claim_mining' }));
-  }
-
-  baseBalance = parseFloat(localStorage.getItem('hermez_base_balance') || '0');
-  balanceEl.textContent = baseBalance.toFixed(4);
-
-  (function initMiningState() {
-    const endAt = parseInt(localStorage.getItem('hermez_mine_end') || '0', 10);
-    if (endAt && endAt > Date.now()) {
-      mineBtn.disabled = true;
-      mineTimer = setInterval(tickMining, 1000);
-      tickMining();
-    } else if (endAt && endAt <= Date.now()) {
-      mineBtn.disabled = false;
-      mineBtn.textContent = 'Claim';
-      mineStatus.textContent = 'Mining complete — ready to claim';
-      mineBtn.onclick = claimMining;
+    const s = currentMiningState;
+    if (s.session_started_at && !s.session_claimed) {
+      const startedAt = new Date(s.session_started_at);
+      const hoursElapsed = (Date.now() - startedAt.getTime()) / 3600000;
+      if (hoursElapsed >= 24) {
+        btn.disabled = false;
+        btn.textContent = 'Claim Reward';
+        btn.dataset.mode = 'claim';
+        status.textContent = 'Session complete! Claim your reward.';
+      } else {
+        btn.disabled = true;
+        btn.textContent = 'Mining...';
+        btn.dataset.mode = 'active';
+        const hoursLeft = (24 - hoursElapsed).toFixed(1);
+        status.textContent = hoursLeft + 'h remaining';
+      }
     } else {
-      mineBtn.onclick = startMining;
+      btn.disabled = false;
+      btn.textContent = 'Start Mining';
+      btn.dataset.mode = 'start';
+      status.textContent = 'Ready to mine';
     }
-  })();
+  }
+
+  async function loadState() {
+    try {
+      const data = await apiFetch('/api/state');
+      if (data.mining) {
+        currentMiningState = data.mining;
+        const balEl = document.getElementById('balance-amount');
+        if (balEl) balEl.textContent = Number(data.mining.balance || 0).toFixed(4);
+        renderMineButton();
+      }
+    } catch (e) {
+      console.error('loadState error:', e);
+    }
+  }
+  loadState();
+  setInterval(loadState, 60000);
+
+  document.getElementById('mine-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('mine-btn');
+    const status = document.getElementById('mine-status');
+    const mode = btn.dataset.mode || 'start';
+
+    btn.disabled = true;
+
+    if (mode === 'start') {
+      status.textContent = 'Starting...';
+      const result = await apiFetch('/api/mine/start', { method: 'POST' });
+      if (result.ok) {
+        await loadState();
+      } else {
+        status.textContent = result.reason || 'Could not start mining.';
+        btn.disabled = false;
+      }
+    } else if (mode === 'claim') {
+      status.textContent = 'Claiming...';
+      const result = await apiFetch('/api/mine/claim', { method: 'POST' });
+      if (result.ok) {
+        status.textContent = 'Claimed ' + result.earned.toFixed(4) + ' HRZ!';
+        await loadState();
+      } else {
+        status.textContent = result.reason || 'Could not claim.';
+        btn.disabled = false;
+      }
+    }
+  });
 
   const TASK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
   const TASK_CODES = ['monetag_view_1','monetag_view_2','monetag_view_3','monetag_view_4'];
