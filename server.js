@@ -28,7 +28,6 @@ const upgrades = require("./modules/upgrades");
 app.use("/api/upgrades", upgrades.router);
 upgrades.start();
 app.use(express.json());
-app.post(["/api/upgrade","/api/booster/activate"], (req,res)=>res.status(503).json({error:"manual_only"}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function auth(req, res, next) {
