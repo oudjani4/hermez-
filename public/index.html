@@ -365,6 +365,7 @@
 
 <script>
   <script>window.onerror=function(m,s,l,c){document.title="ERR: "+m+" @ "+l+":"+c;alert("JS ERROR: "+m+" line "+l);};</script>
+  <script>document.addEventListener("click", function(e){alert("Clicked: " + e.target.tagName + " class=" + e.target.className);}, true);</script>
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
