@@ -197,20 +197,3 @@ async function harvest(userId) {
 }
 
 module.exports = { harvest, getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade, activeBoosterMultiplier, activateBooster };
-
-async function deductBalance(userId, amount) {
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const { data: state, error } = await supabase
-      .from('mining_state').select('balance').eq('user_id', userId).maybeSingle();
-    if (error) throw error;
-    if (!state || Number(state.balance) < amount) return { ok: false, reason: 'insufficient_balance' };
-    const newBal = Number(state.balance) - amount;
-    const { data, error: upErr } = await supabase
-      .from('mining_state').update({ balance: newBal })
-      .eq('user_id', userId).eq('balance', state.balance).select();
-    if (upErr) throw upErr;
-    if (data && data.length === 1) return { ok: true, balance: newBal };
-  }
-  return { ok: false, reason: 'try_again' };
-}
-module.exports.deductBalance = deductBalance;

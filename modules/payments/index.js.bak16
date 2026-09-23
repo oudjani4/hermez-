@@ -154,21 +154,3 @@ async function findMatchingTransaction(senderAddress, expectedAmountTon) {
 }
 
 module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWithdrawal, verifyTonTransaction, findMatchingTransaction, isTxAlreadyUsed, markTxUsed };
-
-async function createWithdrawal(userId, amount, wallet, deductFn, refundFn) {
-  const MIN_WITHDRAWAL = 1000;
-  if (amount < MIN_WITHDRAWAL) return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
-  const { data: reserve, error: rErr } = await supabase
-    .from('reserve_wallet').select('balance').eq('id', 1).single();
-  if (rErr) throw rErr;
-  if (Number(reserve.balance) < amount) return { ok: false, reason: 'reserve_insolvent' };
-  const d = await deductFn(userId, amount);
-  if (!d.ok) return d;
-  const { data, error } = await supabase
-    .from('withdrawals')
-    .insert({ user_id: userId, amount, status: 'pending', wallet })
-    .select().single();
-  if (error) { await refundFn(userId, amount); throw error; }
-  return { ok: true, withdrawal: data, balance: d.balance };
-}
-module.exports.createWithdrawal = createWithdrawal;

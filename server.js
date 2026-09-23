@@ -95,6 +95,32 @@ app.get('/api/tasks', auth, async (req, res) => {
   }
 });
 
+app.post('/api/withdraw', auth, async (req, res) => {
+  try {
+    const userId = req.telegramUser.id;
+    const amount = Math.round(Number(req.body.amount) * 10000) / 10000;
+    const wallet = String(req.body.wallet || '').trim();
+    if (!Number.isFinite(amount) || amount <= 0) return res.json({ ok: false, reason: 'invalid_amount' });
+    if (!/^(?:(?:EQ|UQ)[A-Za-z0-9_-]{46}|-?\d:[0-9a-fA-F]{64})$/.test(wallet)) return res.json({ ok: false, reason: 'invalid_wallet' });
+    const result = await payments.createWithdrawal(userId, amount, wallet, mining.deductBalance, mining.addBalance);
+    if (!result.ok) return res.json(result);
+    try {
+      const tok = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+      if (tok && process.env.ADMIN_CHAT_ID) {
+        await fetch('https://api.telegram.org/bot' + tok + '/sendMessage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ chat_id: process.env.ADMIN_CHAT_ID, text: 'طلب سحب جديد\nUser: ' + userId + '\nAmount: ' + amount + ' HMZ\nWallet: ' + wallet })
+        });
+      }
+    } catch (e) { console.error('admin notify failed'); }
+    res.json({ ok: true, balance: result.balance });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 app.post('/api/ad-reward', auth, async (req, res) => {
   try {
     const result = await tasks.claimAdReward(req.telegramUser.id, req.body.code);

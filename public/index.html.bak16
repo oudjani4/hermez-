@@ -628,7 +628,7 @@
     }
   }
 
-  async function requestWithdraw() {
+  function requestWithdraw() {
     const amount = document.getElementById('withdraw-amount').value.trim();
     const wallet = document.getElementById('withdraw-wallet').value.trim();
     const status = document.getElementById('withdraw-status');
@@ -636,19 +636,8 @@
       status.textContent = 'Enter both an amount and a wallet address.';
       return;
     }
-    status.textContent = 'Sending request...';
-    try {
-      const r = await apiFetch('/api/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet }) });
-      if (r.ok) {
-        status.textContent = 'Withdraw request submitted.';
-        await loadState();
-      } else {
-        const m = { below_minimum: 'Minimum withdrawal is 1000 HMZ.', insufficient_balance: 'Not enough holding balance.', invalid_wallet: 'Invalid wallet address.', invalid_amount: 'Invalid amount.', reserve_insolvent: 'Withdrawals are temporarily unavailable.', try_again: 'Try again.' };
-        status.textContent = m[r.reason] || 'Could not submit request.';
-      }
-    } catch (e) {
-      status.textContent = 'Could not submit request.';
-    }
+    status.textContent = 'Withdraw request submitted.';
+    if (tg) tg.sendData(JSON.stringify({ action: 'request_withdraw', amount, wallet }));
   }
 
   let currentMiningState = null;
