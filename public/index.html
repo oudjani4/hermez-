@@ -752,6 +752,10 @@
     });
   }
   setupHarvestButton();
+  setInterval(() => {
+    const m = document.getElementById('mine-btn');
+    if (m) m.style.display = m.dataset.mode === 'active' ? 'none' : '';
+  }, 500);
 
 
   const TASK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
