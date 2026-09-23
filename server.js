@@ -62,6 +62,15 @@ app.post('/api/mine/start', auth, async (req, res) => {
   }
 });
 
+app.post('/api/mine/harvest', auth, async (req, res) => {
+  try {
+    res.json(await mining.harvest(req.telegramUser.id));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 app.post('/api/mine/claim', auth, async (req, res) => {
   try {
     const result = await mining.claimSession(req.telegramUser.id);

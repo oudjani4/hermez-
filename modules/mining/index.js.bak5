@@ -179,21 +179,4 @@ async function activateBooster(userId, multiplier, durationHours, cost) {
   return { ok: true, expiresAt, newBalance };
 }
 
-async function harvest(userId) {
-  const state = await getState(userId);
-  if (!state || !state.session_started_at || state.session_claimed) return { ok: false, reason: 'no_active_session' };
-  const now = Date.now();
-  const elapsed = Math.min((now - new Date(state.session_started_at).getTime()) / 1000, SESSION_HOURS * 3600);
-  if (elapsed < 30) return { ok: false, reason: 'too_soon' };
-  const earned = elapsed * rateForLevel(state.level) * activeBoosterMultiplier(state);
-  const finished = elapsed >= SESSION_HOURS * 3600;
-  const patch = finished ? { session_claimed: true } : { session_started_at: new Date(now).toISOString() };
-  const { data, error } = await supabase.from('mining_state').update(patch)
-    .eq('user_id', userId).eq('session_started_at', state.session_started_at).select();
-  if (error) throw error;
-  if (!data || data.length !== 1) return { ok: false, reason: 'try_again' };
-  const balance = await addBalance(userId, earned);
-  return { ok: true, earned, balance };
-}
-
-module.exports = { harvest, getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade, activeBoosterMultiplier, activateBooster };
+module.exports = { getState, startSession, claimSession, setLevel, rateForLevel, addBalance, purchaseUpgrade, activeBoosterMultiplier, activateBooster };

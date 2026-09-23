@@ -724,34 +724,6 @@
     }, 1000);
   }
   startMineCounter();
-  function setupHarvestButton() {
-    const mineBtn = document.getElementById('mine-btn');
-    const hb = document.createElement('button');
-    hb.id = 'harvest-btn';
-    hb.className = mineBtn.className;
-    hb.style.cssText = 'display:none;margin-top:10px';
-    hb.textContent = 'Claim';
-    mineBtn.parentNode.insertBefore(hb, mineBtn.nextSibling);
-    setInterval(() => {
-      const s = currentMiningState;
-      const active = s && s.session_started_at && !s.session_claimed &&
-        (Date.now() - new Date(s.session_started_at).getTime()) < 24 * 3600 * 1000;
-      if (hb.dataset.busy !== '1') hb.style.display = active ? 'block' : 'none';
-    }, 1000);
-    hb.addEventListener('click', async () => {
-      hb.dataset.busy = '1';
-      hb.disabled = true;
-      const status = document.getElementById('mine-status');
-      const r = await apiFetch('/api/mine/harvest', { method: 'POST' });
-      await loadState();
-      if (r.ok) status.textContent = 'Claimed ' + r.earned.toFixed(4) + ' HMZ!';
-      else status.textContent = r.reason === 'too_soon' ? 'Mine a little longer.' : 'Try again.';
-      hb.disabled = false;
-      hb.dataset.busy = '0';
-    });
-  }
-  setupHarvestButton();
-
 
   const TASK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
   const TASK_CODES = ['monetag_view_1','monetag_view_2','monetag_view_3','monetag_view_4'];
