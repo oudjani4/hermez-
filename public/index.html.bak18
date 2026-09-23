@@ -232,7 +232,6 @@
 .coin{width:min(56vw,29vh) !important;}
 </style>
 <style>.card:has(#wallet-btn){display:none !important;}</style>
-<style>#screen-profile{padding-bottom:140px !important;}#withdraw-status{display:block !important;min-height:22px;margin-top:12px;text-align:center;color:#e8c56a;}</style>
 </head>
 <body>
 
@@ -638,7 +637,7 @@
       status.textContent = 'Enter both an amount and a wallet address.';
       return;
     }
-    status.textContent = 'Sending request...'; try { status.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+    status.textContent = 'Sending request...';
     try {
       const r = await apiFetch('/api/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet }) });
       if (r.ok) {
