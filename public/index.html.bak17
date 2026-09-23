@@ -231,7 +231,6 @@
 #screen-mine{padding-top:78px !important;}
 .coin{width:min(56vw,29vh) !important;}
 </style>
-<style>.card:has(#wallet-btn){display:none !important;}</style>
 </head>
 <body>
 
