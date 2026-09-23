@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hermez Admin</title>
 <style>
-*{box-sizing:border-box}html,body{overflow-x:hidden;max-width:100%}.top{flex-wrap:wrap}.sbar{display:flex;gap:8px}.sbar input{flex:1;min-width:0}body{margin:0;background:#14100a;color:#f3ead6;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;font-size:15px}
+*{box-sizing:border-box}body{margin:0;background:#14100a;color:#f3ead6;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;font-size:15px}
 .hide{display:none!important}button{font-family:inherit;cursor:pointer}
 .top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid #2b2417;position:sticky;top:0;background:#14100a;z-index:5}
 h1{font-size:19px;margin:0;color:#e8c56a}
@@ -52,7 +52,7 @@ input{width:100%;background:#1c1710;color:#f3ead6;border:1px solid #2b2417;borde
 <div class="wrap">
 <div id="pUsers">
 <div class="stat"><span data-i="subs"></span><b id="total">0</b></div>
-<div class="sbar"><input id="q" data-ph="search"><button class="btn gold" id="sb" data-i="searchBtn"></button></div>
+<input id="q" data-ph="search">
 <div class="chips" id="uChips"></div>
 <div id="uList"></div>
 </div>
@@ -65,8 +65,8 @@ input{width:100%;background:#1c1710;color:#f3ead6;border:1px solid #2b2417;borde
 <script>
 var API='https://hermez-backend.onrender.com';
 var T={
-ar:{title:'لوحة تحكم Hermez',loginHint:'أدخل كلمة سر الأدمن',password:'كلمة السر',enter:'دخول',logout:'خروج',tUsers:'المستخدمين',tWd:'طلبات السحب',subs:'عدد المشتركين',searchBtn:'بحث',search:'ابحث بالرقم أو المعرف أو المحفظة...',fAll:'الكل',fRef:'لديهم محيل',fNoRef:'بدون محيل',oldest:'الأقدم أولاً',newest:'الأحدث أولاً',bal:'الرصيد (Holding)',wallet:'المحفظة',upline:'المحيل',uplineWallet:'محفظة المحيل',refs:'المستخدمون المحالون',joined:'تاريخ التسجيل',more:'عرض المزيد',none:'لا توجد نتائج',loading:'جارٍ التحميل...',wPending:'قيد الانتظار',amount:'المبلغ',date:'التاريخ',done:'تمت المعالجة',approve:'موافقة (تم الإرسال)',reject:'رفض وإرجاع الرصيد',copy:'نسخ',copied:'تم النسخ',confirmA:'هل أرسلت المبلغ فعلاً إلى هذه المحفظة؟',confirmR:'رفض الطلب وإرجاع المبلغ لرصيد المستخدم؟',pending:'قيد الانتظار',paid:'تم الدفع',rejected:'مرفوض',wrong:'كلمة السر غير صحيحة',tooMany:'محاولات كثيرة، حاول لاحقاً',notSet:'ADMIN_KEY غير مضبوط في السيرفر',fail:'تعذر تنفيذ العملية',neterr:'تعذر الاتصال بالسيرفر',reserve:'رصيد الاحتياطي غير كافٍ',lang:'English'},
-en:{title:'Hermez Admin',loginHint:'Enter the admin password',password:'Password',enter:'Sign in',logout:'Log out',tUsers:'Users',tWd:'Withdrawals',subs:'Subscribers',searchBtn:'Search',search:'Search by number, ID or wallet...',fAll:'All',fRef:'Has upline',fNoRef:'No upline',oldest:'Oldest first',newest:'Newest first',bal:'Holding balance',wallet:'Wallet',upline:'Upline',uplineWallet:'Upline wallet',refs:'Referred users',joined:'Joined',more:'Show more',none:'No results',loading:'Loading...',wPending:'Pending',amount:'Amount',date:'Date',done:'Processed',approve:'Approve (sent)',reject:'Reject and refund',copy:'Copy',copied:'Copied',confirmA:'Did you actually send the amount to this wallet?',confirmR:'Reject this request and refund the user?',pending:'Pending',paid:'Paid',rejected:'Rejected',wrong:'Wrong password',tooMany:'Too many attempts, try later',notSet:'ADMIN_KEY is not set on the server',fail:'Action failed',neterr:'Could not reach the server',reserve:'Reserve balance is too low',lang:'العربية'}
+ar:{title:'لوحة تحكم Hermez',loginHint:'أدخل كلمة سر الأدمن',password:'كلمة السر',enter:'دخول',logout:'خروج',tUsers:'المستخدمين',tWd:'طلبات السحب',subs:'عدد المشتركين',search:'ابحث بالرقم أو المعرف أو المحفظة...',fAll:'الكل',fRef:'لديهم محيل',fNoRef:'بدون محيل',oldest:'الأقدم أولاً',newest:'الأحدث أولاً',bal:'الرصيد (Holding)',wallet:'المحفظة',upline:'المحيل',uplineWallet:'محفظة المحيل',refs:'المستخدمون المحالون',joined:'تاريخ التسجيل',more:'عرض المزيد',none:'لا توجد نتائج',loading:'جارٍ التحميل...',wPending:'قيد الانتظار',amount:'المبلغ',date:'التاريخ',done:'تمت المعالجة',approve:'موافقة (تم الإرسال)',reject:'رفض وإرجاع الرصيد',copy:'نسخ',copied:'تم النسخ',confirmA:'هل أرسلت المبلغ فعلاً إلى هذه المحفظة؟',confirmR:'رفض الطلب وإرجاع المبلغ لرصيد المستخدم؟',pending:'قيد الانتظار',paid:'تم الدفع',rejected:'مرفوض',wrong:'كلمة السر غير صحيحة',tooMany:'محاولات كثيرة، حاول لاحقاً',notSet:'ADMIN_KEY غير مضبوط في السيرفر',fail:'تعذر تنفيذ العملية',neterr:'تعذر الاتصال بالسيرفر',reserve:'رصيد الاحتياطي غير كافٍ',lang:'English'},
+en:{title:'Hermez Admin',loginHint:'Enter the admin password',password:'Password',enter:'Sign in',logout:'Log out',tUsers:'Users',tWd:'Withdrawals',subs:'Subscribers',search:'Search by number, ID or wallet...',fAll:'All',fRef:'Has upline',fNoRef:'No upline',oldest:'Oldest first',newest:'Newest first',bal:'Holding balance',wallet:'Wallet',upline:'Upline',uplineWallet:'Upline wallet',refs:'Referred users',joined:'Joined',more:'Show more',none:'No results',loading:'Loading...',wPending:'Pending',amount:'Amount',date:'Date',done:'Processed',approve:'Approve (sent)',reject:'Reject and refund',copy:'Copy',copied:'Copied',confirmA:'Did you actually send the amount to this wallet?',confirmR:'Reject this request and refund the user?',pending:'Pending',paid:'Paid',rejected:'Rejected',wrong:'Wrong password',tooMany:'Too many attempts, try later',notSet:'ADMIN_KEY is not set on the server',fail:'Action failed',neterr:'Could not reach the server',reserve:'Reserve balance is too low',lang:'العربية'}
 };
 var KEY='',lang='ar';
 try{KEY=sessionStorage.getItem('adm_key')||'';lang=localStorage.getItem('adm_lang')||'ar';}catch(e){}
@@ -168,10 +168,7 @@ document.querySelectorAll('.lang').forEach(function(b){b.onclick=function(){
 $('go').onclick=enter;
 $('pw').onkeydown=function(e){if(e.key==='Enter')enter()};
 $('out').onclick=logout;
-function doSearch(){shown=100;renderU()}
-$('sb').onclick=doSearch;
-$('q').onkeydown=function(e){if(e.key==='Enter')doSearch()};
-$('q').oninput=function(){if(!$('q').value.trim())doSearch()};
+$('q').oninput=function(){shown=100;renderU()};
 document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){
   document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
   var w=b.dataset.tab==='wd';$('pUsers').classList.toggle('hide',w);$('pWd').classList.toggle('hide',!w);
