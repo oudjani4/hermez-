@@ -260,7 +260,6 @@
     <div class="profile-name" id="profile-name">—</div>
     <div class="profile-id" id="profile-id">ID: —</div>
     <div class="card" style="margin-top:24px"><div class="card-flex"><div><div class="row-title">Holding balance</div><div class="row-sub">Your harvested balance</div></div><div class="reward" id="profile-holding" style="font-size:18px;font-weight:700">—</div></div></div>
-    <div class="card" style="margin-top:12px"><div class="card-flex"><div><div class="row-title">Sound effects</div><div class="row-sub">Coin sound on rewards</div></div><button class="action-btn" id="sound-toggle">Sound: ON</button></div></div>
 
     <div class="card" style="margin-top:24px">
       <div class="card-flex">
@@ -701,7 +700,7 @@
       status.textContent = 'Claiming...';
       const result = await apiFetch('/api/mine/claim', { method: 'POST' });
       if (result.ok) {
-        status.textContent = 'Claimed ' + result.earned.toFixed(4) + ' HMZ!'; playCoinSound();
+        status.textContent = 'Claimed ' + result.earned.toFixed(4) + ' HMZ!';
         await loadState();
       } else {
         status.textContent = result.reason || 'Could not claim.';
@@ -747,7 +746,7 @@
       const status = document.getElementById('mine-status');
       const r = await apiFetch('/api/mine/harvest', { method: 'POST' });
       await loadState();
-      if (r.ok) { status.textContent = 'Claimed ' + r.earned.toFixed(4) + ' HMZ!'; playCoinSound(); }
+      if (r.ok) status.textContent = 'Claimed ' + r.earned.toFixed(4) + ' HMZ!';
       else status.textContent = r.reason === 'too_soon' ? 'Mine a little longer.' : 'Try again.';
       hb.disabled = false;
       hb.dataset.busy = '0';
@@ -759,62 +758,6 @@
     if (m) m.style.display = m.dataset.mode === 'active' ? 'none' : '';
   }, 500);
 
-
-  let _audioCtx = null;
-  function soundOn() { try { return localStorage.getItem('hermez_sound') !== 'off'; } catch (e) { return true; } }
-  function unlockAudio() {
-    try {
-      if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (_audioCtx.state === 'suspended') _audioCtx.resume();
-    } catch (e) {}
-  }
-  document.addEventListener('click', unlockAudio);
-  document.addEventListener('touchstart', unlockAudio);
-  function playCoinSound() {
-    if (!soundOn()) return;
-    unlockAudio();
-    if (!_audioCtx) return;
-    const t = _audioCtx.currentTime;
-    [[988, 0], [1319, 0.09]].forEach(function (n) {
-      const o = _audioCtx.createOscillator();
-      const g = _audioCtx.createGain();
-      o.type = 'triangle';
-      o.frequency.value = n[0];
-      g.gain.setValueAtTime(0.0001, t + n[1]);
-      g.gain.exponentialRampToValueAtTime(0.35, t + n[1] + 0.01);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + n[1] + 0.45);
-      o.connect(g); g.connect(_audioCtx.destination);
-      o.start(t + n[1]); o.stop(t + n[1] + 0.5);
-    });
-  }
-  function flyCoins(fromEl) {
-    const r = fromEl.getBoundingClientRect();
-    const sx = r.left + r.width / 2, sy = r.top + r.height / 2;
-    const bal = document.getElementById('balance-amount');
-    const br = bal ? bal.getBoundingClientRect() : null;
-    const tx = br && br.width > 0 ? br.left + br.width / 2 : window.innerWidth / 2;
-    const ty = br && br.width > 0 ? br.top + br.height / 2 : 90;
-    for (let i = 0; i < 10; i++) {
-      const c = document.createElement('div');
-      c.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;width:22px;height:22px;border-radius:50%;left:' + (sx - 11) + 'px;top:' + (sy - 11) + 'px;background:radial-gradient(circle at 30% 30%,#fff3b0,#e6b800 60%,#a67c00);box-shadow:0 0 8px rgba(255,200,0,.8);border:1px solid #7a5a00';
-      document.body.appendChild(c);
-      const jx = (Math.random() - 0.5) * 60, jy = (Math.random() - 0.5) * 40;
-      const a = c.animate([
-        { transform: 'translate(0,0) scale(1)', opacity: 1 },
-        { transform: 'translate(' + jx + 'px,' + (jy - 40) + 'px) scale(1.1)', opacity: 1, offset: 0.25 },
-        { transform: 'translate(' + (tx - sx) + 'px,' + (ty - sy) + 'px) scale(0.4)', opacity: 0.3 }
-      ], { duration: 900 + Math.random() * 300, delay: i * 70, easing: 'ease-in', fill: 'both' });
-      a.onfinish = function () { c.remove(); };
-    }
-  }
-  const _st = document.getElementById('sound-toggle');
-  function paintSound() { if (_st) _st.textContent = soundOn() ? 'Sound: ON 🔊' : 'Sound: OFF 🔇'; }
-  if (_st) _st.addEventListener('click', function () {
-    try { localStorage.setItem('hermez_sound', soundOn() ? 'off' : 'on'); } catch (e) {}
-    paintSound();
-    if (soundOn()) playCoinSound();
-  });
-  paintSound();
 
   const TASK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
   const TASK_CODES = ['monetag_view_1','monetag_view_2','monetag_view_3','monetag_view_4'];
@@ -856,7 +799,7 @@
         if (r.ok) {
           localStorage.setItem('hermez_task_' + code, String(Date.now()));
           btnEl.textContent = 'Done ✅';
-          status.textContent = 'Reward added: ' + r.reward + ' HMZ'; playCoinSound(); flyCoins(btnEl);
+          status.textContent = 'Reward added: ' + r.reward + ' HMZ';
           await loadState();
         } else {
           btnEl.disabled = false;
