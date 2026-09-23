@@ -225,12 +225,6 @@
 </style>
 <style>#wallet-btn-top{border:2px solid #fff !important;box-shadow:0 4px 18px rgba(0,0,0,.7),0 0 0 3px rgba(47,125,225,.4) !important;} .coin{width:min(60vw,32vh) !important;height:auto !important;}</style>
 <style>#screen-mine{padding-top:44px !important;}</style>
-<style>
-:has(> #wallet-btn-top){position:fixed !important;top:0 !important;left:0 !important;right:0 !important;height:64px !important;display:flex !important;align-items:center !important;justify-content:flex-end !important;padding:0 16px !important;margin:0 !important;box-sizing:border-box !important;background:#14100a !important;border-bottom:1px solid rgba(230,190,90,.2) !important;z-index:50 !important;transform:none !important;}
-#wallet-btn-top{position:static !important;background:#2f80ff !important;border:none !important;box-shadow:none !important;padding:10px 18px !important;font-size:15px !important;font-weight:700 !important;border-radius:28px !important;width:auto !important;margin:0 !important;}
-#screen-mine{padding-top:78px !important;}
-.coin{width:min(56vw,29vh) !important;}
-</style>
 </head>
 <body>
 
