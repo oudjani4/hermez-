@@ -86,6 +86,18 @@ app.get('/api/tasks', auth, async (req, res) => {
   }
 });
 
+app.post('/api/ad-reward', auth, async (req, res) => {
+  try {
+    const result = await tasks.claimAdReward(req.telegramUser.id, req.body.code);
+    if (!result.ok) return res.json(result);
+    const balance = await mining.addBalance(req.telegramUser.id, result.reward);
+    res.json({ ok: true, reward: result.reward, balance });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
 app.post('/api/tasks/complete', auth, async (req, res) => {
   try {
     const { taskId } = req.body;

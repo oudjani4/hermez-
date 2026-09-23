@@ -42,26 +42,4 @@ async function completeTask(userId, taskId) {
   return { ok: true, reward: task.reward };
 }
 
-
-const AD_REWARDS = { monetag_view_1: 5, monetag_view_2: 5, monetag_view_3: 5, monetag_view_4: 5 };
-const AD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
-
-async function claimAdReward(userId, code) {
-  const reward = AD_REWARDS[code];
-  if (!reward) return { ok: false, reason: 'invalid_code' };
-
-  const { error } = await supabase.from('ad_claims').insert({ user_id: userId, code });
-  if (!error) return { ok: true, reward };
-  if (error.code !== '23505') throw error;
-
-  const cutoff = new Date(Date.now() - AD_COOLDOWN_MS).toISOString();
-  const { data, error: upErr } = await supabase.from('ad_claims')
-    .update({ claimed_at: new Date().toISOString() })
-    .eq('user_id', userId).eq('code', code).lt('claimed_at', cutoff)
-    .select();
-  if (upErr) throw upErr;
-  if (data && data.length) return { ok: true, reward };
-  return { ok: false, reason: 'cooldown' };
-}
-
-module.exports = { listActiveTasks, isCompleted, completeTask, claimAdReward };
+module.exports = { listActiveTasks, isCompleted, completeTask };

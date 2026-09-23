@@ -735,17 +735,28 @@
       status.textContent = 'Could not load the ad, try again later.';
       return;
     }
-    window['show_11813680']().then(() => {
-      status.textContent = 'Done! Recording your reward...';
+    window['show_11813680']().then(async () => {
+      status.textContent = 'Recording your reward...';
       btnEl.disabled = true;
-      btnEl.textContent = 'Done ✅';
-      const TASK_REWARD = 5;
-      baseBalance += TASK_REWARD;
-      balanceEl.textContent = baseBalance.toFixed(8);
-      localStorage.setItem('hermez_base_balance', String(baseBalance));
-      localStorage.setItem('hermez_task_' + code, String(Date.now()));
-      refreshTaskButtons();
-      if (tg) tg.sendData(JSON.stringify({ action: 'complete_task', code }));
+      try {
+        const r = await apiFetch('/api/ad-reward', {
+          method: 'POST',
+          body: JSON.stringify({ code })
+        });
+        if (r.ok) {
+          localStorage.setItem('hermez_task_' + code, String(Date.now()));
+          btnEl.textContent = 'Done ✅';
+          status.textContent = 'Reward added: ' + r.reward + ' HMZ';
+          await loadState();
+        } else {
+          btnEl.disabled = false;
+          status.textContent = r.reason === 'cooldown' ? 'Come back later for this task.' : 'Could not record reward.';
+        }
+        refreshTaskButtons();
+      } catch (e) {
+        btnEl.disabled = false;
+        status.textContent = 'Could not record reward.';
+      }
     }).catch(() => {
       status.textContent = 'Ad was not completed.';
     });
