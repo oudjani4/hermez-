@@ -223,7 +223,6 @@
   nav.bottom-nav button.active { color: var(--gold-bright); }
   nav.bottom-nav button.active svg { filter: drop-shadow(0 0 4px rgba(231,197,101,0.5)); }
 </style>
-<style>#wallet-btn-top{border:2px solid #fff !important;box-shadow:0 4px 18px rgba(0,0,0,.7),0 0 0 3px rgba(47,125,225,.4) !important;} .coin{width:min(60vw,32vh) !important;height:auto !important;}</style>
 </head>
 <body>
 
@@ -258,7 +257,6 @@
     <div class="profile-avatar" id="profile-avatar">H</div>
     <div class="profile-name" id="profile-name">—</div>
     <div class="profile-id" id="profile-id">ID: —</div>
-    <div class="card" style="margin-top:24px"><div class="card-flex"><div><div class="row-title">Holding balance</div><div class="row-sub">Your harvested balance</div></div><div class="reward" id="profile-holding" style="font-size:18px;font-weight:700">—</div></div></div>
 
     <div class="card" style="margin-top:24px">
       <div class="card-flex">
@@ -712,13 +710,19 @@
     setInterval(() => {
       const old = document.getElementById('mine-live');
       if (old) old.remove();
-      const old2 = document.getElementById('holding-balance');
-      if (old2) old2.remove();
       const s = currentMiningState;
       const balEl = document.getElementById('balance-amount');
       if (!balEl || !s) return;
-      const hold = document.getElementById('profile-holding');
-      if (hold) hold.textContent = Number(s.balance || 0).toFixed(4) + ' HMZ';
+      let hold = document.getElementById('holding-balance');
+      if (!hold) {
+        hold = document.createElement('div');
+        hold.id = 'holding-balance';
+        const cs = getComputedStyle(balEl);
+        hold.style.cssText = 'text-align:center;margin:12px 0;font-size:18px;letter-spacing:1px;color:' + cs.color + ';font-family:' + cs.fontFamily;
+        const st = document.getElementById('mine-status');
+        st.parentNode.insertBefore(hold, st);
+      }
+      hold.textContent = 'Holding balance: ' + Number(s.balance || 0).toFixed(4) + ' HMZ';
       if (!s.session_started_at || s.session_claimed) return;
       const elapsed = Math.min((Date.now() - new Date(s.session_started_at).getTime()) / 1000, 24 * 3600);
       balEl.textContent = (Number(s.balance || 0) + elapsed * (window.currentRate || 0)).toFixed(6);
