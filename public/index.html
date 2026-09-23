@@ -665,7 +665,7 @@
     try {
       const data = await apiFetch('/api/state');
       if (data.mining) {
-        currentMiningState = data.mining;
+        currentMiningState = data.mining; window.currentRate = Number(data.rate_per_sec) || 0;
         const balEl = document.getElementById('balance-amount');
         if (balEl) balEl.textContent = Number(data.mining.balance || 0).toFixed(4);
         renderMineButton();
@@ -705,6 +705,25 @@
       }
     }
   });
+
+  function startMineCounter() {
+    let el = document.getElementById('mine-live');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'mine-live';
+      el.style.cssText = 'font-family:monospace;font-size:28px;text-align:center;margin:12px 0;letter-spacing:1px;display:none';
+      const st = document.getElementById('mine-status');
+      st.parentNode.insertBefore(el, st);
+    }
+    setInterval(() => {
+      const s = currentMiningState;
+      if (!s || !s.session_started_at || s.session_claimed) { el.style.display = 'none'; return; }
+      const elapsed = Math.min((Date.now() - new Date(s.session_started_at).getTime()) / 1000, 24 * 3600);
+      el.style.display = 'block';
+      el.textContent = (elapsed * (window.currentRate || 0)).toFixed(6) + ' HMZ';
+    }, 1000);
+  }
+  startMineCounter();
 
   const TASK_COOLDOWN_MS = 12 * 60 * 60 * 1000;
   const TASK_CODES = ['monetag_view_1','monetag_view_2','monetag_view_3','monetag_view_4'];

@@ -45,7 +45,7 @@ app.get('/api/state', auth, async (req, res) => {
     await profile.ensureUser(userId, { username: req.telegramUser.username, firstName: req.telegramUser.first_name });
     const p = await profile.getFullProfile(userId);
     const m = await mining.getState(userId);
-    res.json({ profile: p, mining: m });
+    res.json({ profile: p, mining: m, rate_per_sec: m ? mining.rateForLevel(m.level) * mining.activeBoosterMultiplier(m) : 0 });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
