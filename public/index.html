@@ -707,20 +707,25 @@
   });
 
   function startMineCounter() {
-    let el = document.getElementById('mine-live');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'mine-live';
-      el.style.cssText = 'font-family:monospace;font-size:28px;text-align:center;margin:12px 0;letter-spacing:1px;display:none';
-      const st = document.getElementById('mine-status');
-      st.parentNode.insertBefore(el, st);
-    }
     setInterval(() => {
+      const old = document.getElementById('mine-live');
+      if (old) old.remove();
       const s = currentMiningState;
-      if (!s || !s.session_started_at || s.session_claimed) { el.style.display = 'none'; return; }
+      const balEl = document.getElementById('balance-amount');
+      if (!balEl || !s) return;
+      let hold = document.getElementById('holding-balance');
+      if (!hold) {
+        hold = document.createElement('div');
+        hold.id = 'holding-balance';
+        const cs = getComputedStyle(balEl);
+        hold.style.cssText = 'text-align:center;margin:12px 0;font-size:18px;letter-spacing:1px;color:' + cs.color + ';font-family:' + cs.fontFamily;
+        const st = document.getElementById('mine-status');
+        st.parentNode.insertBefore(hold, st);
+      }
+      hold.textContent = 'Holding balance: ' + Number(s.balance || 0).toFixed(4) + ' HMZ';
+      if (!s.session_started_at || s.session_claimed) return;
       const elapsed = Math.min((Date.now() - new Date(s.session_started_at).getTime()) / 1000, 24 * 3600);
-      el.style.display = 'block';
-      el.textContent = (elapsed * (window.currentRate || 0)).toFixed(6) + ' HMZ';
+      balEl.textContent = (Number(s.balance || 0) + elapsed * (window.currentRate || 0)).toFixed(6);
     }, 1000);
   }
   startMineCounter();
