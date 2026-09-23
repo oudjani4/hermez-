@@ -25,7 +25,7 @@ async function purchaseUpgrade(userId, currentBalance, targetLevel) {
 }
 
 async function requestWithdrawal(userId, amount) {
-  const MIN_WITHDRAWAL = 500;
+  const MIN_WITHDRAWAL = 1000;
   if (amount < MIN_WITHDRAWAL) {
     return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
   }
