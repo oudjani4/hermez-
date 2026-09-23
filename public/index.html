@@ -224,6 +224,7 @@
   nav.bottom-nav button.active svg { filter: drop-shadow(0 0 4px rgba(231,197,101,0.5)); }
 </style>
 <style>#wallet-btn-top{border:2px solid #fff !important;box-shadow:0 4px 18px rgba(0,0,0,.7),0 0 0 3px rgba(47,125,225,.4) !important;} .coin{width:min(60vw,32vh) !important;height:auto !important;}</style>
+<style>#screen-mine{padding-top:44px !important;}</style>
 </head>
 <body>
 
@@ -653,7 +654,7 @@
         btn.textContent = 'Mining...';
         btn.dataset.mode = 'active';
         const hoursLeft = (24 - hoursElapsed).toFixed(1);
-        status.textContent = hoursLeft + 'h remaining';
+        status.textContent = '';
       }
     } else {
       btn.disabled = false;
