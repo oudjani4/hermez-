@@ -121,6 +121,35 @@ app.post('/api/withdraw', auth, async (req, res) => {
   }
 });
 
+const adminMod = require('./modules/admin');
+const _adminFails = {};
+function adminAuth(req, res, next) {
+  const ip = String(req.get('x-forwarded-for') || req.ip || 'x').split(',').pop().trim();
+  const now = Date.now();
+  let f = _adminFails[ip];
+  if (!f || now - f.t > 900000) f = _adminFails[ip] = { n: 0, t: now };
+  if (f.n >= 10) return res.status(429).json({ error: 'too_many_attempts' });
+  const real = process.env.ADMIN_KEY || '';
+  if (real.length < 12) return res.status(503).json({ error: 'admin_not_configured' });
+  const a = Buffer.from(String((req.body && req.body.key) || ''));
+  const b = Buffer.from(real);
+  if (a.length !== b.length || !require('crypto').timingSafeEqual(a, b)) {
+    f.n++;
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+}
+function adminRoute(fn) {
+  return async (req, res) => {
+    try { res.json(await fn(req)); }
+    catch (e) { console.error(e); res.status(500).json({ error: 'server_error' }); }
+  };
+}
+app.post('/api/admin/users', adminAuth, adminRoute(() => adminMod.listUsers()));
+app.post('/api/admin/withdrawals', adminAuth, adminRoute(() => adminMod.listWithdrawals()));
+app.post('/api/admin/withdrawal/approve', adminAuth, adminRoute((req) => adminMod.approve(req.body.id)));
+app.post('/api/admin/withdrawal/reject', adminAuth, adminRoute((req) => adminMod.reject(req.body.id)));
+
 app.post('/api/ad-reward', auth, async (req, res) => {
   try {
     const result = await tasks.claimAdReward(req.telegramUser.id, req.body.code);

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Hermez Admin</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#14100a;color:#f3ead6;font-family:system-ui,-apple-system,"Segoe UI",Tahoma,sans-serif;font-size:15px}
+.hide{display:none!important}button{font-family:inherit;cursor:pointer}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 16px;border-bottom:1px solid #2b2417;position:sticky;top:0;background:#14100a;z-index:5}
+h1{font-size:19px;margin:0;color:#e8c56a}
+.btn{background:#1c1710;color:#e8c56a;border:1px solid #3a2f1a;border-radius:10px;padding:9px 14px;font-size:14px}
+.btn.gold{background:#e8c56a;color:#14100a;border-color:#e8c56a;font-weight:700}
+.btn.red{color:#ff7a6b;border-color:#5a2a25;background:#231512}
+.tabs{display:flex;border-bottom:1px solid #2b2417}
+.tab{flex:1;padding:14px 8px;background:none;border:none;border-bottom:3px solid transparent;color:#9a8f78;font-size:15px}
+.tab.on{color:#e8c56a;border-bottom-color:#e8c56a}
+.wrap{padding:14px 16px 40px;max-width:720px;margin:0 auto}
+.stat{background:#1c1710;border:1px solid #2b2417;border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.stat b{font-size:26px;color:#e8c56a}
+input{width:100%;background:#1c1710;color:#f3ead6;border:1px solid #2b2417;border-radius:10px;padding:12px;font-size:15px;font-family:inherit}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}
+.chip{background:#1c1710;color:#c9bd9f;border:1px solid #3a2f1a;border-radius:20px;padding:8px 14px;font-size:14px}
+.chip.on{background:#e8c56a;color:#14100a;border-color:#e8c56a;font-weight:700}
+.card{background:#1c1710;border:1px solid #2b2417;border-radius:16px;padding:14px 16px;margin-bottom:12px}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.badge{background:#3a2f1a;color:#e8c56a;border-radius:8px;padding:3px 9px;font-size:13px;white-space:nowrap}
+.badge.num{background:#e8c56a;color:#14100a;font-weight:700}
+.nm{font-size:17px;font-weight:600;word-break:break-word}
+.sub{color:#9a8f78;font-size:13px;margin-top:2px}
+.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid #2b2417;font-size:14px}
+.row>span:first-child{color:#9a8f78;flex-shrink:0}
+.row>b,.row>div{color:#e8c56a;text-align:end;word-break:break-all;font-weight:600}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px;direction:ltr;unicode-bidi:embed;display:inline-block}
+.acts{display:flex;gap:10px;margin-top:12px}.acts .btn{flex:1}
+.st-pending{color:#ffd166}.st-paid{color:#6fdc8c}.st-rejected{color:#ff7a6b}
+.msg{text-align:center;color:#9a8f78;padding:24px}
+.err{color:#ff7a6b;min-height:20px;margin-top:10px;font-size:14px;text-align:center}
+#login{max-width:380px;margin:12vh auto;padding:0 20px}
+</style></head><body>
+
+<div id="login">
+<h1 data-i="title" style="text-align:center;margin-bottom:8px"></h1>
+<div class="sub" data-i="loginHint" style="text-align:center;margin-bottom:18px"></div>
+<input id="pw" type="password" autocomplete="off" data-ph="password">
+<div style="height:10px"></div>
+<button class="btn gold" id="go" style="width:100%" data-i="enter"></button>
+<div class="err" id="lerr"></div>
+<div style="text-align:center;margin-top:14px"><button class="btn lang"></button></div>
+</div>
+
+<div id="app" class="hide">
+<div class="top"><h1 data-i="title"></h1>
+<div style="display:flex;gap:8px"><button class="btn lang"></button><button class="btn" id="out" data-i="logout"></button></div></div>
+<div class="tabs"><button class="tab on" data-tab="users" data-i="tUsers"></button><button class="tab" data-tab="wd" data-i="tWd"></button></div>
+<div class="wrap">
+<div id="pUsers">
+<div class="stat"><span data-i="subs"></span><b id="total">0</b></div>
+<input id="q" data-ph="search">
+<div class="chips" id="uChips"></div>
+<div id="uList"></div>
+</div>
+<div id="pWd" class="hide">
+<div class="chips" id="wChips"></div>
+<div id="wList"></div>
+</div>
+</div></div>
+
+<script>
+var API='https://hermez-backend.onrender.com';
+var T={
+ar:{title:'لوحة تحكم Hermez',loginHint:'أدخل كلمة سر الأدمن',password:'كلمة السر',enter:'دخول',logout:'خروج',tUsers:'المستخدمين',tWd:'طلبات السحب',subs:'عدد المشتركين',search:'ابحث بالرقم أو المعرف أو المحفظة...',fAll:'الكل',fRef:'لديهم محيل',fNoRef:'بدون محيل',oldest:'الأقدم أولاً',newest:'الأحدث أولاً',bal:'الرصيد (Holding)',wallet:'المحفظة',upline:'المحيل',refs:'المستخدمون المحالون',joined:'تاريخ التسجيل',more:'عرض المزيد',none:'لا توجد نتائج',loading:'جارٍ التحميل...',wPending:'قيد الانتظار',amount:'المبلغ',date:'التاريخ',done:'تمت المعالجة',approve:'موافقة (تم الإرسال)',reject:'رفض وإرجاع الرصيد',copy:'نسخ',copied:'تم النسخ',confirmA:'هل أرسلت المبلغ فعلاً إلى هذه المحفظة؟',confirmR:'رفض الطلب وإرجاع المبلغ لرصيد المستخدم؟',pending:'قيد الانتظار',paid:'تم الدفع',rejected:'مرفوض',wrong:'كلمة السر غير صحيحة',tooMany:'محاولات كثيرة، حاول لاحقاً',notSet:'ADMIN_KEY غير مضبوط في السيرفر',fail:'تعذر تنفيذ العملية',neterr:'تعذر الاتصال بالسيرفر',reserve:'رصيد الاحتياطي غير كافٍ',lang:'English'},
+en:{title:'Hermez Admin',loginHint:'Enter the admin password',password:'Password',enter:'Sign in',logout:'Log out',tUsers:'Users',tWd:'Withdrawals',subs:'Subscribers',search:'Search by number, ID or wallet...',fAll:'All',fRef:'Has upline',fNoRef:'No upline',oldest:'Oldest first',newest:'Newest first',bal:'Holding balance',wallet:'Wallet',upline:'Upline',refs:'Referred users',joined:'Joined',more:'Show more',none:'No results',loading:'Loading...',wPending:'Pending',amount:'Amount',date:'Date',done:'Processed',approve:'Approve (sent)',reject:'Reject and refund',copy:'Copy',copied:'Copied',confirmA:'Did you actually send the amount to this wallet?',confirmR:'Reject this request and refund the user?',pending:'Pending',paid:'Paid',rejected:'Rejected',wrong:'Wrong password',tooMany:'Too many attempts, try later',notSet:'ADMIN_KEY is not set on the server',fail:'Action failed',neterr:'Could not reach the server',reserve:'Reserve balance is too low',lang:'العربية'}
+};
+var KEY='',lang='ar';
+try{KEY=sessionStorage.getItem('adm_key')||'';lang=localStorage.getItem('adm_lang')||'ar';}catch(e){}
+var U=[],W=[],uf='all',ord='asc',wf='pending',shown=100,loadedW=false;
+function t(k){return T[lang][k]||k}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function fd(x){return x?new Date(x).toLocaleString('en-GB'):'—'}
+function $(id){return document.getElementById(id)}
+function row(k,v){return '<div class="row"><span>'+esc(k)+'</span><div>'+v+'</div></div>'}
+function show(app){$('login').classList.toggle('hide',app);$('app').classList.toggle('hide',!app)}
+
+async function api(path,extra){
+  var r=await fetch(API+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({key:KEY},extra||{}))});
+  if(r.status===401)throw new Error('401');
+  if(r.status===429)throw new Error('429');
+  if(r.status===503)throw new Error('503');
+  if(!r.ok)throw new Error('500');
+  return r.json();
+}
+function errText(e){var m=e&&e.message;return m==='401'?t('wrong'):m==='429'?t('tooMany'):m==='503'?t('notSet'):t('neterr')}
+
+async function loadUsers(){var d=await api('/api/admin/users');U=d.users;$('total').textContent=d.total;renderU()}
+async function loadWd(){var d=await api('/api/admin/withdrawals');W=d.withdrawals;loadedW=true;renderW()}
+
+async function enter(){
+  KEY=$('pw').value.trim();
+  if(!KEY)return;
+  $('lerr').textContent=t('loading');
+  try{
+    await loadUsers();
+    try{sessionStorage.setItem('adm_key',KEY)}catch(e){}
+    $('pw').value='';$('lerr').textContent='';show(true);
+  }catch(e){$('lerr').textContent=errText(e);KEY=''}
+}
+function logout(){
+  KEY='';try{sessionStorage.removeItem('adm_key')}catch(e){}
+  U=[];W=[];loadedW=false;show(false);
+}
+
+function chip(k,label,on){return '<button class="chip'+(on?' on':'')+'" data-k="'+k+'">'+esc(label)+'</button>'}
+
+function renderU(){
+  var q=$('q').value.trim().toLowerCase();
+  var L=U.filter(function(u){
+    if(uf==='ref'&&!u.upline_id)return false;
+    if(uf==='no'&&u.upline_id)return false;
+    if(!q)return true;
+    return ('#'+u.n+' '+u.n+' '+u.id+' '+(u.username||'')+' '+(u.first_name||'')+' '+(u.wallet||'')).toLowerCase().indexOf(q)>-1;
+  });
+  if(ord==='desc')L=L.slice().reverse();
+  $('uChips').innerHTML=chip('all',t('fAll'),uf==='all')+chip('ref',t('fRef'),uf==='ref')+chip('no',t('fNoRef'),uf==='no')+chip('ord',ord==='asc'?t('oldest'):t('newest'),false);
+  if(!L.length){$('uList').innerHTML='<div class="msg">'+t('none')+'</div>';return}
+  var html=L.slice(0,shown).map(function(u){
+    var name=u.first_name||u.username||('ID '+u.id);
+    return '<div class="card"><div class="head"><div><div class="nm">'+esc(name)+'</div><div class="sub">ID: '+esc(u.id)+(u.username?' · @'+esc(u.username):'')+'</div></div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><span class="badge num">#'+u.n+'</span><span class="badge">Lvl '+esc(u.level)+'</span></div></div>'
+      +row(t('bal'),esc(u.balance.toFixed(4))+' HMZ')
+      +row(t('wallet'),u.wallet?'<span class="mono">'+esc(u.wallet)+'</span>':'—')
+      +row(t('upline'),u.upline?('#'+u.upline):(u.upline_id?esc(u.upline_id):'—'))
+      +row(t('refs'),esc(u.referrals))
+      +row(t('joined'),esc(fd(u.created_at)))+'</div>';
+  }).join('');
+  if(L.length>shown)html+='<div style="text-align:center"><button class="btn" id="more">'+t('more')+'</button></div>';
+  $('uList').innerHTML=html;
+}
+
+function renderW(){
+  $('wChips').innerHTML=chip('pending',t('wPending'),wf==='pending')+chip('all',t('fAll'),wf==='all');
+  var L=W.filter(function(w){return wf==='all'||w.status==='pending'});
+  if(!L.length){$('wList').innerHTML='<div class="msg">'+t('none')+'</div>';return}
+  $('wList').innerHTML=L.map(function(w){
+    var st=T[lang][w.status]?w.status:'pending';
+    var h='<div class="card"><div class="head"><div><div class="nm">'+esc(w.name||('ID '+w.user_id))+'</div><div class="sub">ID: '+esc(w.user_id)+'</div></div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+(w.n?'<span class="badge num">#'+w.n+'</span>':'')+'<span class="badge st-'+st+'">'+esc(t(st))+'</span></div></div>'
+      +row(t('amount'),esc(w.amount.toFixed(4))+' HMZ')
+      +row(t('wallet'),w.wallet?'<span class="mono">'+esc(w.wallet)+'</span> <button class="btn" style="padding:4px 10px;font-size:12px" data-copy="'+esc(w.wallet)+'">'+t('copy')+'</button>':'—')
+      +row(t('date'),esc(fd(w.created_at)));
+    if(w.processed_at)h+=row(t('done'),esc(fd(w.processed_at)));
+    if(w.status==='pending')h+='<div class="acts"><button class="btn gold" data-a="approve" data-id="'+esc(w.id)+'">'+t('approve')+'</button><button class="btn red" data-a="reject" data-id="'+esc(w.id)+'">'+t('reject')+'</button></div>';
+    return h+'</div>';
+  }).join('');
+}
+
+function applyLang(){
+  document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  document.querySelectorAll('[data-i]').forEach(function(e){e.textContent=t(e.dataset.i)});
+  document.querySelectorAll('[data-ph]').forEach(function(e){e.placeholder=t(e.dataset.ph)});
+  document.querySelectorAll('.lang').forEach(function(e){e.textContent=t('lang')});
+  document.title=t('title');
+  renderU();renderW();
+}
+
+document.querySelectorAll('.lang').forEach(function(b){b.onclick=function(){
+  lang=lang==='ar'?'en':'ar';try{localStorage.setItem('adm_lang',lang)}catch(e){}applyLang();
+}});
+$('go').onclick=enter;
+$('pw').onkeydown=function(e){if(e.key==='Enter')enter()};
+$('out').onclick=logout;
+$('q').oninput=function(){shown=100;renderU()};
+document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('.tab').forEach(function(x){x.classList.remove('on')});b.classList.add('on');
+  var w=b.dataset.tab==='wd';$('pUsers').classList.toggle('hide',w);$('pWd').classList.toggle('hide',!w);
+  if(w)loadWd().catch(function(e){alert(errText(e))});
+}});
+$('uChips').onclick=function(e){var k=e.target.dataset.k;if(!k)return;
+  if(k==='ord')ord=ord==='asc'?'desc':'asc';else uf=k;shown=100;renderU()};
+$('wChips').onclick=function(e){var k=e.target.dataset.k;if(!k)return;wf=k;renderW()};
+$('uList').onclick=function(e){if(e.target.id==='more'){shown+=100;renderU()}};
+$('wList').onclick=async function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.copy){try{await navigator.clipboard.writeText(b.dataset.copy);var o=b.textContent;b.textContent=t('copied');setTimeout(function(){b.textContent=o},1200)}catch(x){}return}
+  var a=b.dataset.a,id=b.dataset.id;if(!a)return;
+  if(!confirm(t(a==='approve'?'confirmA':'confirmR')))return;
+  b.disabled=true;
+  try{
+    var r=await api('/api/admin/withdrawal/'+a,{id:id});
+    if(!r.ok)alert(r.reason==='reserve_insolvent'?t('reserve'):t('fail')+' ('+r.reason+')');
+    await loadWd();await loadUsers();
+  }catch(er){alert(errText(er));b.disabled=false}
+};
+
+applyLang();
+if(KEY){loadUsers().then(function(){show(true)}).catch(function(){logout()})}
+</script></body></html>
