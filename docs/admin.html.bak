@@ -65,8 +65,8 @@ input{width:100%;background:#1c1710;color:#f3ead6;border:1px solid #2b2417;borde
 <script>
 var API='https://hermez-backend.onrender.com';
 var T={
-ar:{title:'لوحة تحكم Hermez',loginHint:'أدخل كلمة سر الأدمن',password:'كلمة السر',enter:'دخول',logout:'خروج',tUsers:'المستخدمين',tWd:'طلبات السحب',subs:'عدد المشتركين',search:'ابحث بالرقم أو المعرف أو المحفظة...',fAll:'الكل',fRef:'لديهم محيل',fNoRef:'بدون محيل',oldest:'الأقدم أولاً',newest:'الأحدث أولاً',bal:'الرصيد (Holding)',wallet:'المحفظة',upline:'المحيل',uplineWallet:'محفظة المحيل',refs:'المستخدمون المحالون',joined:'تاريخ التسجيل',more:'عرض المزيد',none:'لا توجد نتائج',loading:'جارٍ التحميل...',wPending:'قيد الانتظار',amount:'المبلغ',date:'التاريخ',done:'تمت المعالجة',approve:'موافقة (تم الإرسال)',reject:'رفض وإرجاع الرصيد',copy:'نسخ',copied:'تم النسخ',confirmA:'هل أرسلت المبلغ فعلاً إلى هذه المحفظة؟',confirmR:'رفض الطلب وإرجاع المبلغ لرصيد المستخدم؟',pending:'قيد الانتظار',paid:'تم الدفع',rejected:'مرفوض',wrong:'كلمة السر غير صحيحة',tooMany:'محاولات كثيرة، حاول لاحقاً',notSet:'ADMIN_KEY غير مضبوط في السيرفر',fail:'تعذر تنفيذ العملية',neterr:'تعذر الاتصال بالسيرفر',reserve:'رصيد الاحتياطي غير كافٍ',lang:'English'},
-en:{title:'Hermez Admin',loginHint:'Enter the admin password',password:'Password',enter:'Sign in',logout:'Log out',tUsers:'Users',tWd:'Withdrawals',subs:'Subscribers',search:'Search by number, ID or wallet...',fAll:'All',fRef:'Has upline',fNoRef:'No upline',oldest:'Oldest first',newest:'Newest first',bal:'Holding balance',wallet:'Wallet',upline:'Upline',uplineWallet:'Upline wallet',refs:'Referred users',joined:'Joined',more:'Show more',none:'No results',loading:'Loading...',wPending:'Pending',amount:'Amount',date:'Date',done:'Processed',approve:'Approve (sent)',reject:'Reject and refund',copy:'Copy',copied:'Copied',confirmA:'Did you actually send the amount to this wallet?',confirmR:'Reject this request and refund the user?',pending:'Pending',paid:'Paid',rejected:'Rejected',wrong:'Wrong password',tooMany:'Too many attempts, try later',notSet:'ADMIN_KEY is not set on the server',fail:'Action failed',neterr:'Could not reach the server',reserve:'Reserve balance is too low',lang:'العربية'}
+ar:{title:'لوحة تحكم Hermez',loginHint:'أدخل كلمة سر الأدمن',password:'كلمة السر',enter:'دخول',logout:'خروج',tUsers:'المستخدمين',tWd:'طلبات السحب',subs:'عدد المشتركين',search:'ابحث بالرقم أو المعرف أو المحفظة...',fAll:'الكل',fRef:'لديهم محيل',fNoRef:'بدون محيل',oldest:'الأقدم أولاً',newest:'الأحدث أولاً',bal:'الرصيد (Holding)',wallet:'المحفظة',upline:'المحيل',refs:'المستخدمون المحالون',joined:'تاريخ التسجيل',more:'عرض المزيد',none:'لا توجد نتائج',loading:'جارٍ التحميل...',wPending:'قيد الانتظار',amount:'المبلغ',date:'التاريخ',done:'تمت المعالجة',approve:'موافقة (تم الإرسال)',reject:'رفض وإرجاع الرصيد',copy:'نسخ',copied:'تم النسخ',confirmA:'هل أرسلت المبلغ فعلاً إلى هذه المحفظة؟',confirmR:'رفض الطلب وإرجاع المبلغ لرصيد المستخدم؟',pending:'قيد الانتظار',paid:'تم الدفع',rejected:'مرفوض',wrong:'كلمة السر غير صحيحة',tooMany:'محاولات كثيرة، حاول لاحقاً',notSet:'ADMIN_KEY غير مضبوط في السيرفر',fail:'تعذر تنفيذ العملية',neterr:'تعذر الاتصال بالسيرفر',reserve:'رصيد الاحتياطي غير كافٍ',lang:'English'},
+en:{title:'Hermez Admin',loginHint:'Enter the admin password',password:'Password',enter:'Sign in',logout:'Log out',tUsers:'Users',tWd:'Withdrawals',subs:'Subscribers',search:'Search by number, ID or wallet...',fAll:'All',fRef:'Has upline',fNoRef:'No upline',oldest:'Oldest first',newest:'Newest first',bal:'Holding balance',wallet:'Wallet',upline:'Upline',refs:'Referred users',joined:'Joined',more:'Show more',none:'No results',loading:'Loading...',wPending:'Pending',amount:'Amount',date:'Date',done:'Processed',approve:'Approve (sent)',reject:'Reject and refund',copy:'Copy',copied:'Copied',confirmA:'Did you actually send the amount to this wallet?',confirmR:'Reject this request and refund the user?',pending:'Pending',paid:'Paid',rejected:'Rejected',wrong:'Wrong password',tooMany:'Too many attempts, try later',notSet:'ADMIN_KEY is not set on the server',fail:'Action failed',neterr:'Could not reach the server',reserve:'Reserve balance is too low',lang:'العربية'}
 };
 var KEY='',lang='ar';
 try{KEY=sessionStorage.getItem('adm_key')||'';lang=localStorage.getItem('adm_lang')||'ar';}catch(e){}
@@ -114,9 +114,7 @@ function renderU(){
     if(uf==='ref'&&!u.upline_id)return false;
     if(uf==='no'&&u.upline_id)return false;
     if(!q)return true;
-    var m=q.match(/^#?(\d{1,6})$/);
-    if(m)return u.n===Number(m[1])||String(u.id)===m[1];
-    return (u.id+' '+(u.username||'')+' '+(u.first_name||'')+' '+(u.wallet||'')+' '+(u.upline_wallet||'')).toLowerCase().indexOf(q.replace(/^@/,''))>-1;
+    return ('#'+u.n+' '+u.n+' '+u.id+' '+(u.username||'')+' '+(u.first_name||'')+' '+(u.wallet||'')).toLowerCase().indexOf(q)>-1;
   });
   if(ord==='desc')L=L.slice().reverse();
   $('uChips').innerHTML=chip('all',t('fAll'),uf==='all')+chip('ref',t('fRef'),uf==='ref')+chip('no',t('fNoRef'),uf==='no')+chip('ord',ord==='asc'?t('oldest'):t('newest'),false);
@@ -127,8 +125,7 @@ function renderU(){
       +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end"><span class="badge num">#'+u.n+'</span><span class="badge">Lvl '+esc(u.level)+'</span></div></div>'
       +row(t('bal'),esc(u.balance.toFixed(4))+' HMZ')
       +row(t('wallet'),u.wallet?'<span class="mono">'+esc(u.wallet)+'</span>':'—')
-      +row(t('upline'),u.upline?('#'+u.upline+(u.upline_name?' · '+esc(u.upline_name):'')):(u.upline_id?esc(u.upline_id):'—'))
-      +row(t('uplineWallet'),u.upline_wallet?'<span class="mono">'+esc(u.upline_wallet)+'</span>':'—')
+      +row(t('upline'),u.upline?('#'+u.upline):(u.upline_id?esc(u.upline_id):'—'))
       +row(t('refs'),esc(u.referrals))
       +row(t('joined'),esc(fd(u.created_at)))+'</div>';
   }).join('');
