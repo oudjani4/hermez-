@@ -9,7 +9,7 @@ const mining = require('./mining');
 
 // ---------- CONFIG (edit prices/rates here) ----------
 const CFG = {
-  treasury: process.env.TON_TREASURY_ADDRESS,
+  treasury: process.env.PROJECT_TON_WALLET || process.env.TON_TREASURY_ADDRESS,
   toncenterKey: process.env.TONCENTER_API_KEY || '',
   botToken: process.env.BOT_TOKEN,
   orderTtlMs: 30 * 60 * 1000,
