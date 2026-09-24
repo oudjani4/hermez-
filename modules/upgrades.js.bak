@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const mining = require('./mining');
 
 // ---------- CONFIG (edit prices/rates here) ----------
 const CFG = {
@@ -84,14 +83,12 @@ function effectiveMultiplier(userId) {
   return lv.rate * (boostOn ? u.boostMult : 1);
 }
 
-async function applyOrder(order) {
+function applyOrder(order) {
+  const u = getUser(order.uid);
   if (order.type === 'level') {
-    const st = await mining.getState(order.uid);
-    if (st.level >= order.target) { order.status = 'paid_unused'; return; }
-    const r = await mining.setLevel(order.uid, order.target);
-    if (!r.ok) { order.status = 'paid_apply_failed'; return; }
+    if (u.level >= order.target) { order.status = 'paid_unused'; return; } // duplicate payment -> manual refund
+    u.level = order.target;
   } else {
-    const u = getUser(order.uid);
     const b = BOOSTERS.find((x) => x.id === order.itemId);
     const now = Date.now();
     const base = u.boostId === b.id && u.boostUntil > now ? u.boostUntil : now; // same booster extends
@@ -126,7 +123,7 @@ async function scan() {
     S.txs[hash] = order.id; // mark tx used (synchronous, no race)
     order.txHash = hash;
     if (ts < order.createdAt || ts > order.expiresAt) { order.status = 'late_payment'; continue; }
-    try { await applyOrder(order); } catch (e) { console.error('applyOrder', e); order.status = 'paid_apply_failed'; }
+    applyOrder(order);
   }
   save();
 }
@@ -156,7 +153,7 @@ router.get('/me', auth, (req, res) => {
   res.json({ ...u, multiplier: effectiveMultiplier(req.uid) });
 });
 
-router.post('/order', auth, async (req, res) => {
+router.post('/order', auth, (req, res) => {
   const { type, id } = req.body || {};
   const u = getUser(req.uid);
   const now = Date.now();
@@ -165,8 +162,7 @@ router.post('/order', auth, async (req, res) => {
 
   let price, target = null, itemId = null;
   if (type === 'level') {
-    const st = await mining.getState(req.uid);
-    const next = LEVELS.find((l) => l.level === st.level + 1);
+    const next = LEVELS.find((l) => l.level === u.level + 1);
     if (!next) return res.status(400).json({ error: 'max_level' });
     price = next.price; target = next.level;
   } else if (type === 'boost') {
