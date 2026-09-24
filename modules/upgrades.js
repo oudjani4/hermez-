@@ -153,8 +153,12 @@ router.use(express.json());
 
 router.get('/catalog', (req, res) => res.json({ levels: LEVELS, boosters: BOOSTERS }));
 
-router.get('/me', auth, (req, res) => {
+router.get('/me', auth, async (req, res) => {
   const u = getUser(req.uid);
+  try {
+    const st = await mining.getState(req.uid);
+    if (st && st.level) { u.level = st.level; save(); }
+  } catch (e) { console.error('[upgrades] /me', e.message); }
   res.json({ ...u, multiplier: effectiveMultiplier(req.uid) });
 });
 
