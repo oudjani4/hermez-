@@ -86,6 +86,32 @@ bot.on('message', async (ctx) => {
       }
     }
 
+    if (payload.action === 'request_upgrade') {
+      const level = payload.level;
+      await bot.telegram.sendMessage(
+        process.env.ADMIN_CHAT_ID,
+        '\ud83d\udce5 طلب ترقية جديد\nUser: ' + ctx.from.id + ' (@' + (ctx.from.username || '-') + ')\nLevel: ' + level,
+        Markup.inlineKeyboard([
+          Markup.button.callback('✅ Approve', 'approve_upgrade_' + ctx.from.id + '_' + level),
+          Markup.button.callback('❌ Reject', 'reject_req_' + ctx.from.id)
+        ])
+      );
+      return ctx.reply('تم إرسال طلب الترقية للأدمين، فانتظار الموافقة.');
+    }
+
+    if (payload.action === 'request_booster') {
+      const boosterId = payload.id;
+      await bot.telegram.sendMessage(
+        process.env.ADMIN_CHAT_ID,
+        '\ud83d\udce5 طلب Booster جديد\nUser: ' + ctx.from.id + ' (@' + (ctx.from.username || '-') + ')\nBooster ID: ' + boosterId,
+        Markup.inlineKeyboard([
+          Markup.button.callback('✅ Approve', 'approve_booster_' + ctx.from.id + '_' + boosterId),
+          Markup.button.callback('❌ Reject', 'reject_req_' + ctx.from.id)
+        ])
+      );
+      return ctx.reply('تم إرسال طلب الـ Booster للأدمين، فانتظار الموافقة.');
+    }
+
     if (payload.action !== 'complete_task') return;
     const allTasks = await tasks.listActiveTasks();
     const task = allTasks.find(t => t.code === payload.code);
@@ -100,6 +126,66 @@ bot.on('message', async (ctx) => {
   } catch (e) {
     console.error('web_app_data error:', e);
     return ctx.reply('حدث خطأ أثناء معالجة الطلب.');
+  }
+});
+
+
+const BOOSTER_CATALOG = {
+  x2_24h: { multiplier: 2, hours: 24, cost: 100 },
+  x3_48h: { multiplier: 3, hours: 48, cost: 250 },
+};
+
+bot.action(/^approve_upgrade_(\d+)_(\d+)$/, async (ctx) => {
+  const userId = Number(ctx.match[1]);
+  const level = Number(ctx.match[2]);
+  try {
+    const result = await mining.purchaseUpgrade(userId, level);
+    if (result.ok) {
+      await ctx.answerCbQuery('تمت الموافقة');
+      await ctx.editMessageText(`✅ تمت الموافقة على ترقية المستخدم ${userId} إلى المستوى ${level}`);
+      await bot.telegram.sendMessage(userId, `🎉 تمت الموافقة على ترقيتك! مستواك الآن: ${level}`);
+    } else {
+      await ctx.answerCbQuery('فشل: ' + result.reason);
+      await ctx.editMessageText(`❌ فشلت الترقية للمستخدم ${userId}: ${result.reason}`);
+    }
+  } catch (e) {
+    console.error('approve_upgrade error:', e);
+    await ctx.answerCbQuery('خطأ في السيرفر');
+  }
+});
+
+bot.action(/^approve_booster_(\d+)_(.+)$/, async (ctx) => {
+  const userId = Number(ctx.match[1]);
+  const boosterId = ctx.match[2];
+  const booster = BOOSTER_CATALOG[boosterId];
+  if (!booster) {
+    await ctx.answerCbQuery('بوستر غير معروف');
+    return;
+  }
+  try {
+    const result = await mining.activateBooster(userId, booster.multiplier, booster.hours, booster.cost);
+    if (result.ok) {
+      await ctx.answerCbQuery('تمت الموافقة');
+      await ctx.editMessageText(`✅ تم تفعيل Booster (${booster.multiplier}x لمدة ${booster.hours}س) للمستخدم ${userId}`);
+      await bot.telegram.sendMessage(userId, `🚀 تم تفعيل Booster ${booster.multiplier}x لمدة ${booster.hours} ساعة!`);
+    } else {
+      await ctx.answerCbQuery('فشل: ' + result.reason);
+      await ctx.editMessageText(`❌ فشل تفعيل Booster للمستخدم ${userId}: ${result.reason}`);
+    }
+  } catch (e) {
+    console.error('approve_booster error:', e);
+    await ctx.answerCbQuery('خطأ في السيرفر');
+  }
+});
+
+bot.action(/^reject_req_(\d+)$/, async (ctx) => {
+  const userId = Number(ctx.match[1]);
+  try {
+    await ctx.answerCbQuery('تم الرفض');
+    await ctx.editMessageText(`❌ تم رفض الطلب للمستخدم ${userId}`);
+    await bot.telegram.sendMessage(userId, '❌ تم رفض طلبك من الأدمين.');
+  } catch (e) {
+    console.error('reject_req error:', e);
   }
 });
 

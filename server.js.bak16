@@ -10,8 +10,24 @@ const referrals = require('./modules/referrals');
 const payments = require('./modules/payments');
 
 const app = express();
+app.use((req, res, next) => {
+  const allowed = (process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim());
+  const o = req.get('origin');
+  if (o && allowed.includes(o)) {
+    res.set({
+      'Access-Control-Allow-Origin': o,
+      'Access-Control-Allow-Headers': 'Content-Type,x-telegram-init-data',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      Vary: 'Origin',
+    });
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+  }
+  next();
+});
+const upgrades = require("./modules/upgrades");
+app.use("/api/upgrades", upgrades.router);
+upgrades.start();
 app.use(express.json());
-app.post(["/api/upgrade","/api/booster/activate"], (req,res)=>res.status(503).json({error:"manual_only"}));
 app.use(express.static(path.join(__dirname, 'public')));
 
 function auth(req, res, next) {
@@ -29,7 +45,7 @@ app.get('/api/state', auth, async (req, res) => {
     await profile.ensureUser(userId, { username: req.telegramUser.username, firstName: req.telegramUser.first_name });
     const p = await profile.getFullProfile(userId);
     const m = await mining.getState(userId);
-    res.json({ profile: p, mining: m });
+    res.json({ profile: p, mining: m, rate_per_sec: m ? mining.rateForLevel(m.level) * mining.activeBoosterMultiplier(m) : 0 });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
@@ -40,6 +56,15 @@ app.post('/api/mine/start', auth, async (req, res) => {
   try {
     const result = await mining.startSession(req.telegramUser.id);
     res.json(result);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/mine/harvest', auth, async (req, res) => {
+  try {
+    res.json(await mining.harvest(req.telegramUser.id));
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
@@ -64,6 +89,18 @@ app.get('/api/tasks', auth, async (req, res) => {
       completed: await tasks.isCompleted(req.telegramUser.id, t.id)
     })));
     res.json(withStatus);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'server_error' });
+  }
+});
+
+app.post('/api/ad-reward', auth, async (req, res) => {
+  try {
+    const result = await tasks.claimAdReward(req.telegramUser.id, req.body.code);
+    if (!result.ok) return res.json(result);
+    const balance = await mining.addBalance(req.telegramUser.id, result.reward);
+    res.json({ ok: true, reward: result.reward, balance });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'server_error' });
