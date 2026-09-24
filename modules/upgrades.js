@@ -120,12 +120,14 @@ async function scan() {
     const match = /^hz_([0-9a-f]{12})$/.exec(String(m.message).trim());
     if (!match) continue;
     const order = S.orders[match[1]];
+    console.log('scan: found', match[1], order&&order.status, m.value);
     if (!order || order.status !== 'pending') continue;
     if (BigInt(m.value) < BigInt(order.nano)) continue; // underpaid
     const ts = t.utime * 1000;
     S.txs[hash] = order.id; // mark tx used (synchronous, no race)
     order.txHash = hash;
     if (ts < order.createdAt || ts > order.expiresAt) { order.status = 'late_payment'; continue; }
+    console.log('applying', order.id, order.type, order.target);
     try { await applyOrder(order); } catch (e) { console.error('applyOrder', e); order.status = 'paid_apply_failed'; }
   }
   save();
