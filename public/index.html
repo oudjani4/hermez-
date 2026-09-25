@@ -282,6 +282,7 @@
 
     <div class="card">
       <div class="card-flex"><span class="row-title">Balance</span><span class="reward" id="p-balance">0.0000</span></div>
+      <div class="card-flex"><span class="row-title">≈ TON</span><span class="reward" id="p-balance-ton">0.0000</span></div>
     </div>
     <div class="card">
       <div class="card-flex"><span class="row-title">Level</span><span class="reward" id="p-level">1</span></div>
@@ -426,6 +427,7 @@
       const data = await apiFetch('/api/state');
       if (data && data.mining) {
         document.getElementById('p-balance').textContent = Number(data.mining.balance).toFixed(4);
+              document.getElementById('p-balance-ton').textContent = (Number(data.mining.balance) / 1000).toFixed(4);
         document.getElementById('p-level').textContent = data.mining.level;
       }
       if (data && data.profile && typeof data.profile.referralCount !== 'undefined') {
