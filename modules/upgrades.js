@@ -200,6 +200,7 @@ router.post('/verify', auth, async (req, res) => {
 });
 
 function start() {
+  console.log("[upgrades] treasury =", JSON.stringify(CFG.treasury));
   if (!CFG.treasury) { console.error("[upgrades] TON_TREASURY_ADDRESS missing, payments disabled"); return; }
   setInterval(() => scan().catch((e) => console.error('[upgrades]', e.message)), CFG.pollMs);
 }
