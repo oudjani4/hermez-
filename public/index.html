@@ -431,7 +431,7 @@ function getTonEquivalent(amount) {
       const data = await apiFetch('/api/state');
       if (data && data.mining) {
         document.getElementById('p-balance').textContent = Number(data.mining.balance).toFixed(4);
-              document.getElementById('p-balance-ton').textContent = (Number(data.mining.balance) / 1000).toFixed(4);
+              document.getElementById('p-balance-ton').textContent = (Number(getTonEquivalent(data.mining.balance))).toFixed(4);
         document.getElementById('p-level').textContent = data.mining.level;
       }
       if (data && data.profile && typeof data.profile.referralCount !== 'undefined') {
