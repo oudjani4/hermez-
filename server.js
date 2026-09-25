@@ -213,7 +213,13 @@ app.post("/api/upgrade", auth, async (req, res) => {
     const targetLevel = m.level + 1;
     const upgrade = await payments.getUpgradeCost(targetLevel);
 
-    const found = await payments.findMatchingTransaction(senderAddress, upgrade.cost);
+    let found = await payments.findMatchingTransaction(senderAddress, upgrade.cost);
+    const RETRY_MS = 5000, MAX_WAIT_MS = 120000;
+    const startedAt = Date.now();
+    while (!found.ok && found.reason === 'tx_not_found' && Date.now() - startedAt < MAX_WAIT_MS) {
+      await new Promise(r => setTimeout(r, RETRY_MS));
+      found = await payments.findMatchingTransaction(senderAddress, upgrade.cost);
+    }
     if (!found.ok) {
       return res.json(found);
     }
