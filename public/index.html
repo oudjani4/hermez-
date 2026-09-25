@@ -420,6 +420,20 @@
       </div>
     `).join('');
   }
+  async function refreshProfile() {
+    try {
+      const data = await apiFetch('/api/state');
+      if (data && data.mining) {
+        document.getElementById('p-balance').textContent = Number(data.mining.balance).toFixed(4);
+        document.getElementById('p-level').textContent = data.mining.level;
+      }
+      if (data && data.profile && typeof data.profile.referralCount !== 'undefined') {
+        document.getElementById('p-refs').textContent = data.profile.referralCount;
+      }
+    } catch (e) { console.error('refreshProfile', e); }
+  }
+  refreshProfile();
+
   loadUpgrades();
 
   async function loadBoosters() {
