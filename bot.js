@@ -59,7 +59,7 @@ bot.command('tasks', async (ctx) => {
 bot.command('profile', async (ctx) => {
   const p = await profile.getFullProfile(ctx.from.id);
   return ctx.reply(
-    `👤 ${p.username}\nالمستوى: ${p.miningLevel}\nالرصيد: ${p.balance.toFixed(4)}\nالإحالات: ${p.referralCount}`
+    `👤 ${p.username}\nالمستوى: ${p.miningLevel}\nالرصيد: ${p.balance.toFixed(4)} (≈ ${p.tonEquivalent.toFixed(4)} TON)\nالإحالات: ${p.referralCount}`
   );
 });
 

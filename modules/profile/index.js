@@ -18,6 +18,7 @@ async function ensureUser(userId, { username, firstName } = {}) {
 
 // نقطة التجميع الوحيدة: تستدعي modules الثانية بدال ما تنسخ منطقها
 async function getFullProfile(userId) {
+  const TON_RATE = 1000; // 1000 coin = 1 TON
   const [user, miningState, refStats] = await Promise.all([
     supabase.from('users').select('*').eq('id', userId).single().then(r => r.data),
     mining.getState(userId),
@@ -29,6 +30,7 @@ async function getFullProfile(userId) {
     joinedAt: user.created_at,
     miningLevel: miningState.level,
     balance: miningState.balance,
+    tonEquivalent: miningState.balance / TON_RATE,
     referralCount: refStats.count,
     referralEarnings: refStats.totalEarned,
   };
