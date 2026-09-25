@@ -376,6 +376,7 @@
   </nav>
 
 <script>
+  const API_BASE = 'https://hermez-backend.onrender.com';
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
 
@@ -509,7 +510,6 @@
     return tg && tg.initData ? tg.initData : '';
   }
 
-  const API_BASE = 'https://hermez-backend.onrender.com';
   async function apiFetch(path, options = {}) {
     const res = await fetch(API_BASE + path, {
       ...options,
