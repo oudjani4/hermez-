@@ -206,5 +206,9 @@ bot.command("wallet", (ctx) => {
 });
 
 // دالة تحويل Hermez إلى TON
+
+// دالة تحويل Hermez إلى TON
+
+// دالة تحويل Hermez إلى TON
 const HMZ_TO_TON_RATE = 500;
-function getTonEquivalent(amount) { return (amount / HRZ_TO_TON_RATE).toFixed(4); }
+function getTonEquivalent(amount) { return (amount / HMZ_TO_TON_RATE).toFixed(4); }
