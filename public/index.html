@@ -377,6 +377,10 @@
   </nav>
 
 <script>
+function getTonEquivalent(amount) {
+    const rate = 500;
+    return (amount / rate).toFixed(4);
+}
   const API_BASE = 'https://hermez-backend.onrender.com';
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
