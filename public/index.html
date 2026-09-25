@@ -430,7 +430,7 @@
       if (data && data.profile && typeof data.profile.referralCount !== 'undefined') {
         document.getElementById('p-refs').textContent = data.profile.referralCount;
       }
-    } catch (e) { console.error('refreshProfile', e); }
+    } catch (e) { alert('refreshProfile error: ' + e.message); }
   }
   refreshProfile();
 
