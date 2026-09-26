@@ -282,7 +282,6 @@
 
     <div class="card">
       <div class="card-flex"><span class="row-title">Balance</span><span class="reward" id="p-balance">0.0000</span></div>
-      <div class="card-flex"><span class="row-title">≈ TON</span><span class="reward" id="p-balance-ton">0.0000</span></div>
     </div>
     <div class="card">
       <div class="card-flex"><span class="row-title">Level</span><span class="reward" id="p-level">1</span></div>
@@ -377,10 +376,6 @@
   </nav>
 
 <script>
-function getTonEquivalent(amount) {
-    const rate = 500;
-    return (amount / rate).toFixed(4);
-}
   const API_BASE = 'https://hermez-backend.onrender.com';
   const tg = window.Telegram?.WebApp;
   if (tg) { tg.ready(); tg.expand(); }
@@ -431,13 +426,10 @@ function getTonEquivalent(amount) {
       const data = await apiFetch('/api/state');
       if (data && data.mining) {
         document.getElementById('p-balance').textContent = Number(data.mining.balance).toFixed(4);
-              document.getElementById('p-balance-ton').textContent = (Number(getTonEquivalent(data.mining.balance))).toFixed(4);
         document.getElementById('p-level').textContent = data.mining.level;
       }
       if (data && data.profile && typeof data.profile.referralCount !== 'undefined') {
         document.getElementById('p-refs').textContent = data.profile.referralCount;
-        const refCountEl = document.getElementById('ref-count');
-        if (refCountEl) refCountEl.textContent = data.profile.referralCount;
       }
     } catch (e) { alert('refreshProfile error: ' + e.message); }
   }

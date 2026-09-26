@@ -436,6 +436,8 @@ function getTonEquivalent(amount) {
       }
       if (data && data.profile && typeof data.profile.referralCount !== 'undefined') {
         document.getElementById('p-refs').textContent = data.profile.referralCount;
+        const refCountEl = document.getElementById('ref-count');
+        if (refCountEl) refCountEl.textContent = data.profile.referralCount;
       }
     } catch (e) { alert('refreshProfile error: ' + e.message); }
   }
