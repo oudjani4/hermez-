@@ -39,6 +39,17 @@ function auth(req, res, next) {
   next();
 }
 
+app.get('/api/referrals', auth, async (req, res) => {
+  try {
+    const userId = req.telegramUser.id;
+    const list = await referrals.getReferralList(userId);
+    res.json({ ok: true, referrals: list });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "server_error" });
+  }
+});
+
 app.get('/api/state', auth, async (req, res) => {
   try {
     const userId = req.telegramUser.id;

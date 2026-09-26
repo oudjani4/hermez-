@@ -57,4 +57,18 @@ async function getReferralStats(userId) {
   };
 }
 
-module.exports = { registerReferral, getReferralStats, REFERRAL_REWARD };
+async function getReferralList(userId) {
+  const { data, error } = await supabase
+    .from('referral_rewards')
+    .select('reward, created_at, referred_id, users:referred_id(username, first_name)')
+    .eq('referrer_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  return data.map(r => ({
+    name: (r.users && (r.users.username || r.users.first_name)) || ('User ' + r.referred_id),
+    reward: Number(r.reward),
+  }));
+}
+
+module.exports = { registerReferral, getReferralStats, getReferralList, REFERRAL_REWARD };

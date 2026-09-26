@@ -314,6 +314,7 @@
       <span class="row-title">Total referrals</span>
       <span class="reward" id="ref-count">0</span>
     </div>
+    <div id="ref-list"></div>
   </section>
 
   <section class="screen" id="screen-booster">
@@ -442,6 +443,22 @@ function getTonEquivalent(amount) {
     } catch (e) { alert('refreshProfile error: ' + e.message); }
   }
   refreshProfile();
+
+  async function loadReferralList() {
+    try {
+      const data = await apiFetch('/api/referrals');
+      const el = document.getElementById('ref-list');
+      if (!el) return;
+      if (!data || !data.ok || !data.referrals || data.referrals.length === 0) {
+        el.innerHTML = '<div class="row-sub" style="text-align:center;margin-top:10px">No referrals yet.</div>';
+        return;
+      }
+      el.innerHTML = data.referrals.map(r =>
+        '<div class="card card-flex"><span class="row-title">' + r.name + '</span><span class="reward">+' + r.reward + '</span></div>'
+      ).join('');
+    } catch (e) { console.error('loadReferralList', e); }
+  }
+  loadReferralList();
 
   loadUpgrades();
 
