@@ -67,6 +67,7 @@ async function getReferralList(userId) {
 
   return data.map(r => ({
     name: (r.users && (r.users.username || r.users.first_name)) || ('User ' + r.referred_id),
+    id: r.referred_id,
     reward: Number(r.reward),
   }));
 }

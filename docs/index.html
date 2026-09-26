@@ -454,7 +454,7 @@ function getTonEquivalent(amount) {
         return;
       }
       el.innerHTML = data.referrals.map(r =>
-        '<div class="card card-flex"><span class="row-title">' + r.name + '</span><span class="reward">+' + r.reward + '</span></div>'
+        '<div class="card card-flex"><div><div class="row-title">' + r.name + '</div><div class="row-sub">ID: ' + r.id + '</div></div><span class="reward">+' + r.reward + '</span></div>'
       ).join('');
     } catch (e) { console.error('loadReferralList', e); }
   }
