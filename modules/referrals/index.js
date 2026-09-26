@@ -60,7 +60,7 @@ async function getReferralStats(userId) {
 async function getReferralList(userId) {
   const { data, error } = await supabase
     .from('referral_rewards')
-    .select('reward, created_at, referred_id, users:referred_id(username, first_name)')
+    .select('reward, granted_at, referred_id, users:referred_id(username, first_name)')
     .eq('referrer_id', userId)
     .order('granted_at', { ascending: false });
   if (error) throw error;
