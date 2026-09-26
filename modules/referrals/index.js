@@ -5,7 +5,7 @@
 
 const { supabase } = require('../../shared/db');
 
-const REFERRAL_REWARD = 50; // بعملة hermez، عدّلها حسب اقتصادك
+const REFERRAL_REWARD = 5; // بعملة hermez، عدّلها حسب اقتصادك
 
 // يُستدعى مرة وحدة بس عند /start مع referral code
 async function registerReferral(newUserId, referrerId) {
