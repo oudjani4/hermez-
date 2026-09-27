@@ -130,7 +130,12 @@ function renderU(){
       +row(t('upline'),u.upline?('#'+u.upline+(u.upline_name?' · '+esc(u.upline_name):'')):(u.upline_id?esc(u.upline_id):'—'))
       +row(t('uplineWallet'),u.upline_wallet?'<span class="mono">'+esc(u.upline_wallet)+'</span>':'—')
       +row(t('refs'),esc(u.referrals))
-      +row(t('joined'),esc(fd(u.created_at)))+'</div>';
+      +row(t('joined'),esc(fd(u.created_at)))
+      +'<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">'
+      +'<button class="btn" data-act="addbal" data-id="'+esc(u.id)+'">+ Balance</button>'
+      +'<button class="btn" data-act="setlevel" data-id="'+esc(u.id)+'">Set Level</button>'
+      +'<button class="btn" data-act="reset" data-id="'+esc(u.id)+'">Reset</button>'
+      +'</div></div>';
   }).join('');
   if(L.length>shown)html+='<div style="text-align:center"><button class="btn" id="more">'+t('more')+'</button></div>';
   $('uList').innerHTML=html;
@@ -180,7 +185,23 @@ document.querySelectorAll('.tab').forEach(function(b){b.onclick=function(){
 $('uChips').onclick=function(e){var k=e.target.dataset.k;if(!k)return;
   if(k==='ord')ord=ord==='asc'?'desc':'asc';else uf=k;shown=100;renderU()};
 $('wChips').onclick=function(e){var k=e.target.dataset.k;if(!k)return;wf=k;renderW()};
-$('uList').onclick=function(e){if(e.target.id==='more'){shown+=100;renderU()}};
+$('uList').onclick=async function(e){
+  if(e.target.id==='more'){shown+=100;renderU();return}
+  var act=e.target.dataset.act, id=e.target.dataset.id;
+  if(!act)return;
+  if(act==='addbal'){
+    var amt=prompt('Amount to add (HMZ):');
+    if(amt===null||amt==='')return;
+    try{await api('/api/admin/user/add-balance',{userId:id,amount:Number(amt)});alert('Balance added');loadUsers()}catch(err){alert(errText(err))}
+  } else if(act==='setlevel'){
+    var lvl=prompt('New level:');
+    if(lvl===null||lvl==='')return;
+    try{await api('/api/admin/user/set-level',{userId:id,level:Number(lvl)});alert('Level updated');loadUsers()}catch(err){alert(errText(err))}
+  } else if(act==='reset'){
+    if(!confirm('Reset this user balance and level to zero/1?'))return;
+    try{await api('/api/admin/user/reset',{userId:id});alert('User reset');loadUsers()}catch(err){alert(errText(err))}
+  }
+};
 $('wList').onclick=async function(e){
   var b=e.target.closest('button');if(!b)return;
   if(b.dataset.copy){try{await navigator.clipboard.writeText(b.dataset.copy);var o=b.textContent;b.textContent=t('copied');setTimeout(function(){b.textContent=o},1200)}catch(x){}return}

@@ -90,4 +90,27 @@ async function reject(id) {
   return { ok: true };
 }
 
-module.exports = { listUsers, listWithdrawals, approve, reject };
+
+async function addBalance(userId, amount) {
+  if (badId(userId) || !amount || isNaN(amount)) return { ok: false, reason: 'invalid' };
+  const newBalance = await mining.addBalance(userId, Number(amount));
+  return { ok: true, newBalance };
+}
+
+async function resetUser(userId) {
+  if (badId(userId)) return { ok: false, reason: 'invalid' };
+  const { error } = await supabase
+    .from('mining_state')
+    .update({ balance: 0, level: 1, session_started_at: null, session_claimed: true, booster_multiplier: 1, booster_expires_at: null })
+    .eq('user_id', userId);
+  if (error) throw error;
+  return { ok: true };
+}
+
+async function setUserLevel(userId, level) {
+  if (badId(userId) || !level || isNaN(level)) return { ok: false, reason: 'invalid' };
+  const result = await mining.setLevel(userId, Number(level));
+  return result;
+}
+
+module.exports = { listUsers, listWithdrawals, approve, reject, addBalance, resetUser, setUserLevel };
