@@ -513,15 +513,20 @@ function getTonEquivalent(amount) {
       const senderAddress = tonConnectUI.wallet.account.address;
 
       setTimeout(async () => {
-        const result = await apiFetch('/api/booster/activate', {
-          method: 'POST',
-          body: JSON.stringify({ boosterId: id, senderAddress })
-        });
-        if (result.ok) {
-          alert('Booster activated! x' + result.multiplier + ' mining speed.');
-          loadBoosters();
-        } else {
-          alert('Activation failed: ' + (result.reason || 'unknown_error'));
+        try {
+          const result = await apiFetch('/api/booster/activate', {
+            method: 'POST',
+            body: JSON.stringify({ boosterId: id, senderAddress })
+          });
+          if (result.ok) {
+            alert('Booster activated! x' + result.multiplier + ' mining speed.');
+            loadBoosters();
+          } else {
+            alert('Activation failed: ' + (result.reason || 'unknown_error'));
+          }
+        } catch (err) {
+          console.error('booster activation error:', err);
+          alert('Activation request failed: ' + err.message + '. Please try again or contact support with your transaction.');
         }
       }, 15000);
 
