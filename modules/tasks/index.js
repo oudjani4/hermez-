@@ -43,7 +43,7 @@ async function completeTask(userId, taskId) {
 }
 
 
-const AD_REWARDS = { monetag_view_1: 5, monetag_view_2: 5, monetag_view_3: 5, monetag_view_4: 5 };
+const AD_REWARDS = { monetag_view_1: 5, monetag_view_2: 5, monetag_view_3: 5, monetag_view_4: 5, join_channel: 5 };
 const AD_COOLDOWN_MS = 12 * 60 * 60 * 1000;
 
 async function claimAdReward(userId, code) {
