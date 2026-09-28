@@ -890,7 +890,7 @@ function getTonEquivalent(amount) {
   setInterval(refreshTaskButtons, 60000);
 
   function joinChannelTask(btnEl) {
-    window.open('https://t.me/hermezcoin', '_blank');
+    setTimeout(function () { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) { Telegram.WebApp.openTelegramLink('https://t.me/hermezcoin'); } else { window.open('https://t.me/hermezcoin', '_blank'); } }, 2500);
     const status = document.getElementById('task-status');
     status.textContent = 'Claiming reward...';
     btnEl.disabled = true;
@@ -914,7 +914,7 @@ function getTonEquivalent(amount) {
         status.textContent = 'Error claiming reward. Try again.';
         btnEl.disabled = false;
       }
-    }, 3000);
+    }, 0);
   }
 
   function watchAd(code, btnEl) {
