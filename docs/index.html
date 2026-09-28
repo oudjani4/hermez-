@@ -347,6 +347,10 @@
       <div><div class="row-title">Watch Ad 4</div><div class="row-sub reward">+5 coins</div></div>
       <button class="task-btn" id="task-btn-4" onclick="watchAd('monetag_view_4', this)">Watch</button>
     </div>
+    <div class="card card-flex">
+      <div><div class="row-title">Join our Channel</div><div class="row-sub reward">+5 coins</div></div>
+      <button class="task-btn" id="task-btn-channel" onclick="joinChannelTask(this)">Join</button>
+    </div>
     <div class="mine-status" id="task-status"></div>
   </section>
 
@@ -884,6 +888,34 @@ function getTonEquivalent(amount) {
   }
   refreshTaskButtons();
   setInterval(refreshTaskButtons, 60000);
+
+  function joinChannelTask(btnEl) {
+    window.open('https://t.me/hermezcoin', '_blank');
+    const status = document.getElementById('task-status');
+    status.textContent = 'Claiming reward...';
+    btnEl.disabled = true;
+    setTimeout(async () => {
+      try {
+        const r = await apiFetch('/api/ad-reward', {
+          method: 'POST',
+          body: JSON.stringify({ code: 'join_channel' })
+        });
+        if (r.ok) {
+          btnEl.textContent = 'Done ✅';
+          status.textContent = 'Reward added: ' + r.reward + ' HMZ';
+          if (typeof playCoinSound === 'function') playCoinSound();
+          if (typeof flyCoins === 'function') flyCoins(btnEl);
+        } else {
+          status.textContent = r.reason || 'Could not claim reward.';
+          btnEl.disabled = false;
+        }
+      } catch (err) {
+        console.error('join channel task error:', err);
+        status.textContent = 'Error claiming reward. Try again.';
+        btnEl.disabled = false;
+      }
+    }, 3000);
+  }
 
   function watchAd(code, btnEl) {
     const status = document.getElementById('task-status');
