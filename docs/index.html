@@ -889,6 +889,24 @@ function getTonEquivalent(amount) {
   refreshTaskButtons();
   setInterval(refreshTaskButtons, 60000);
 
+  function refreshJoinButton() {
+    const btn = document.getElementById('task-btn-channel');
+    if (!btn) return;
+    const last = parseInt(localStorage.getItem('hermez_task_join_channel') || '0', 10);
+    const remaining = (last + TASK_COOLDOWN_MS) - Date.now();
+    if (remaining > 0) {
+      btn.disabled = true;
+      const h = Math.floor(remaining / 3600000);
+      const m = Math.floor((remaining % 3600000) / 60000);
+      btn.textContent = h + 'h ' + m + 'm';
+    } else if (btn.dataset.mode !== 'claim') {
+      btn.disabled = false;
+      btn.textContent = 'Join';
+    }
+  }
+  refreshJoinButton();
+  setInterval(refreshJoinButton, 60000);
+
   function joinChannelTask(btnEl) {
     const status = document.getElementById('task-status');
     if (btnEl.dataset.mode !== 'claim') {
@@ -911,13 +929,22 @@ function getTonEquivalent(amount) {
           body: JSON.stringify({ code: 'join_channel' })
         });
         if (r.ok) {
-          btnEl.textContent = 'Done ✅';
           status.textContent = 'Reward added: ' + r.reward + ' HMZ';
           if (typeof playCoinSound === 'function') playCoinSound();
           if (typeof flyCoins === 'function') flyCoins(btnEl);
+          localStorage.setItem('hermez_task_join_channel', String(Date.now()));
+          btnEl.dataset.mode = '';
+          refreshJoinButton();
         } else {
-          status.textContent = r.reason || 'Could not claim reward.';
-          btnEl.disabled = false;
+          if (r.reason === 'cooldown') {
+            localStorage.setItem('hermez_task_join_channel', String(Date.now()));
+            btnEl.dataset.mode = '';
+            status.textContent = 'Already claimed. Come back later.';
+            refreshJoinButton();
+          } else {
+            status.textContent = r.reason || 'Could not claim reward.';
+            btnEl.disabled = false;
+          }
         }
       } catch (err) {
         console.error('join channel task error:', err);
