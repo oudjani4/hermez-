@@ -890,11 +890,21 @@ function getTonEquivalent(amount) {
   setInterval(refreshTaskButtons, 60000);
 
   function joinChannelTask(btnEl) {
-    setTimeout(function () { if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) { Telegram.WebApp.openTelegramLink('https://t.me/hermezcoin'); } else { window.open('https://t.me/hermezcoin', '_blank'); } }, 2500);
     const status = document.getElementById('task-status');
-    status.textContent = 'Claiming reward...';
+    if (btnEl.dataset.mode !== 'claim') {
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) {
+        Telegram.WebApp.openTelegramLink('https://t.me/hermezcoin');
+      } else {
+        window.open('https://t.me/hermezcoin', '_blank');
+      }
+      btnEl.dataset.mode = 'claim';
+      btnEl.textContent = 'Claim';
+      status.textContent = 'Join the channel, then come back and press Claim.';
+      return;
+    }
     btnEl.disabled = true;
-    setTimeout(async () => {
+    status.textContent = 'Claiming reward...';
+    (async () => {
       try {
         const r = await apiFetch('/api/ad-reward', {
           method: 'POST',
@@ -914,7 +924,7 @@ function getTonEquivalent(amount) {
         status.textContent = 'Error claiming reward. Try again.';
         btnEl.disabled = false;
       }
-    }, 0);
+    })();
   }
 
   function watchAd(code, btnEl) {
