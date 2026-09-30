@@ -132,15 +132,6 @@ app.post('/api/withdraw', auth, async (req, res) => {
   }
 });
 
-app.post('/api/my-withdrawals', auth, async (req, res) => {
-  try {
-    const { supabase } = require('./shared/db');
-    const { data, error } = await supabase.from('withdrawals').select('*').eq('user_id', req.telegramUser.id).order('id', { ascending: false }).limit(5);
-    if (error) throw error;
-    res.json({ ok: true, items: data || [] });
-  } catch (e) { console.error(e); res.status(500).json({ error: 'server_error' }); }
-});
-
 const adminMod = require('./modules/admin');
 const _adminFails = {};
 function adminAuth(req, res, next) {

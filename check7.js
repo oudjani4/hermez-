@@ -1,388 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Hermez Coin</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
-<style>
-  :root {
-    --bg: #0e0b08;
-    --bg-panel: #17120c;
-    --gold: #e7c565;
-    --gold-bright: #f6df9a;
-    --gold-dim: #8a723f;
-    --text-dim: #9a8f7a;
-    --border: #2a2115;
-  }
-  * { box-sizing: border-box; }
-  html, body {
-    height: 100%;
-    margin: 0;
-    background: var(--bg);
-    color: #f0e9d8;
-    font-family: 'Georgia', 'Times New Roman', serif;
-    -webkit-tap-highlight-color: transparent;
-  }
-  body {
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
-    background:
-      radial-gradient(circle at 50% 15%, rgba(231,197,101,0.07), transparent 60%),
-      var(--bg);
-  }
-  .screen { display: none; min-height: 100vh; min-height: 100svh; padding: 28px 22px 20px; overflow-y: auto; position: relative; }
-  .screen.active { display: block; }
-  .screen-centered.active {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 22px;
-    min-height: calc(100vh - 78px);
-    min-height: calc(100svh - 78px);
-    padding-bottom: 0;
-  }
-  .screen-centered .brand,
-  .screen-centered .balance-block,
-  .screen-centered .coin-wrap,
-  .screen-centered .mine-btn,
-  .screen-centered .mine-status {
-    width: 100%;
-    max-width: 320px;
-  }
 
-  .brand { text-align: center; margin-top: 0; }
-  .brand h1 {
-    margin: 0;
-    font-size: 34px;
-    letter-spacing: 6px;
-    font-weight: 700;
-    color: var(--gold-bright);
-    text-shadow: 0 0 18px rgba(231,197,101,0.25);
-  }
-  .brand .sub {
-    display: block;
-    margin-top: 4px;
-    font-size: 12px;
-    letter-spacing: 4px;
-    color: var(--gold-dim);
-  }
-  .brand .rule {
-    width: 90px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
-    margin: 14px auto 0;
-  }
-
-  .balance-block { text-align: center; margin-top: 0; }
-  .balance-block .amount {
-    font-size: 44px;
-    font-weight: 700;
-    color: var(--gold-bright);
-    letter-spacing: 1px;
-  }
-  .balance-block .label {
-    margin-top: 4px;
-    font-size: 11px;
-    letter-spacing: 3px;
-    color: var(--text-dim);
-  }
-
-  .coin-wrap { display: flex; justify-content: center; margin: 0; }
-  .coin { width: 190px; height: 190px; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(231,197,101,0.25)); }
-
-  .mine-btn {
-    display: block;
-    width: 100%;
-    max-width: 320px;
-    margin: 0 auto;
-    padding: 16px;
-    border: none;
-    border-radius: 14px;
-    font-family: inherit;
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    color: #241a08;
-    background: linear-gradient(180deg, var(--gold-bright), var(--gold));
-    box-shadow: 0 6px 20px rgba(231,197,101,0.25);
-    cursor: pointer;
-  }
-  .mine-btn:disabled {
-    background: #3a3226;
-    color: #8a8270;
-    box-shadow: none;
-  }
-  .mine-status {
-    text-align: center;
-    margin-top: 14px;
-    font-size: 12px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-  }
-
-  .panel-title {
-    font-size: 20px;
-    color: var(--gold-bright);
-    letter-spacing: 2px;
-    margin: 4px 0 18px;
-    text-align: center;
-  }
-  .card {
-    background: var(--bg-panel);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px 18px;
-    margin-bottom: 12px;
-  }
-  .card .row-title { font-size: 15px; color: #f0e9d8; }
-  .card .row-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
-  .card .reward { color: var(--gold); font-weight: 700; }
-
-  .task-btn, .action-btn {
-    font-family: inherit;
-    border: 1px solid var(--gold-dim);
-    background: transparent;
-    color: var(--gold-bright);
-    padding: 9px 16px;
-    border-radius: 10px;
-    font-size: 13px;
-    cursor: pointer;
-  }
-  .task-btn:disabled {
-    color: var(--text-dim);
-    border-color: var(--border);
-  }
-  .card-flex {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-  }
-
-  .ref-link-box {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-  .ref-link-box input {
-    flex: 1;
-    background: #0b0906;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-family: inherit;
-    font-size: 12px;
-  }
-
-  .profile-avatar {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    margin: 0 auto 12px;
-    background: linear-gradient(180deg, var(--gold-bright), var(--gold-dim));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 26px;
-    font-weight: 700;
-    color: #241a08;
-  }
-  .profile-name { text-align: center; font-size: 17px; color: #f0e9d8; }
-  .profile-id { text-align: center; font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-
-  nav.bottom-nav {
-    position: fixed;
-    left: 0; right: 0; bottom: 0;
-    z-index: 10;
-    display: flex;
-    background: #100c08;
-    border-top: 1px solid var(--border);
-    padding: 10px 4px calc(10px + env(safe-area-inset-bottom, 0px));
-  }
-  nav.bottom-nav button {
-    flex: 1;
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-family: inherit;
-    font-size: 10px;
-    letter-spacing: 0.5px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    padding: 4px 0;
-  }
-  nav.bottom-nav button svg { width: 22px; height: 22px; }
-  nav.bottom-nav button.active { color: var(--gold-bright); }
-  nav.bottom-nav button.active svg { filter: drop-shadow(0 0 4px rgba(231,197,101,0.5)); }
-</style>
-<style>#wallet-btn-top{border:2px solid #fff !important;box-shadow:0 4px 18px rgba(0,0,0,.7),0 0 0 3px rgba(47,125,225,.4) !important;} .coin{width:min(60vw,32vh) !important;height:auto !important;}</style>
-<style>#screen-mine{padding-top:44px !important;}</style>
-<style>
-:has(> #wallet-btn-top){position:fixed !important;top:0 !important;left:0 !important;right:0 !important;height:64px !important;display:flex !important;align-items:center !important;justify-content:flex-end !important;padding:0 16px !important;margin:0 !important;box-sizing:border-box !important;background:#14100a !important;border-bottom:1px solid rgba(230,190,90,.2) !important;z-index:50 !important;transform:none !important;}
-#wallet-btn-top{position:static !important;background:#2f80ff !important;border:none !important;box-shadow:none !important;padding:10px 18px !important;font-size:15px !important;font-weight:700 !important;border-radius:28px !important;width:auto !important;margin:0 !important;}
-#screen-mine{padding-top:78px !important;}
-.coin{width:min(56vw,29vh) !important;}
-</style>
-<style>.card:has(#wallet-btn){display:none !important;}</style>
-<style>#screen-profile{padding-bottom:140px !important;}#withdraw-status{display:block !important;min-height:22px;margin-top:12px;text-align:center;color:#e8c56a;}</style>
-</head>
-<body>
-
-  <section class="screen screen-centered active" id="screen-mine">
-    <div id="wallet-pill" style="position:absolute; top:14px; left:50%; transform:translateX(-50%); z-index:5;">
-      <button id="wallet-btn-top" onclick="toggleWallet()" style="display:flex; align-items:center; gap:8px; font-family:inherit; border:none; background:#2f7de1; color:#fff; padding:12px 22px; border-radius:28px; font-size:14px; font-weight:700; cursor:pointer; box-shadow:0 4px 14px rgba(47,125,225,0.4); white-space:nowrap;">
-        <span style="font-size:16px; line-height:1;">◈</span>
-        <span id="wallet-status-top">Connect Wallet</span>
-      </button>
-    </div>
-    <div class="brand">
-      <h1>HERMEZ</h1>
-      <span class="sub">COIN</span>
-      <div class="rule"></div>
-    </div>
-
-    <div class="balance-block">
-      <div class="amount" id="balance-amount">0.0000</div>
-      <div class="label">CURRENT BALANCE</div>
-    </div>
-
-    <div class="coin-wrap">
-      <img class="coin" alt="Hermez Coin" src="coin-gold.png">
-    </div>
-
-    <button class="mine-btn" id="mine-btn">Start Mining</button>
-    <div class="mine-status" id="mine-status">Ready to mine</div>
-  </section>
-
-  <section class="screen" id="screen-profile">
-    <div class="panel-title">Profile</div>
-    <div class="profile-avatar" id="profile-avatar">H</div>
-    <div class="profile-name" id="profile-name">—</div>
-    <div class="profile-id" id="profile-id">ID: —</div>
-    <div class="card" style="margin-top:24px"><div class="card-flex"><div><div class="row-title">Holding balance</div><div class="row-sub">Your harvested balance</div></div><div class="reward" id="profile-holding" style="font-size:18px;font-weight:700">—</div></div></div>
-    <div class="card" style="margin-top:12px"><div class="card-flex"><div><div class="row-title">Sound effects</div><div class="row-sub">Coin sound on rewards</div></div><button class="action-btn" id="sound-toggle">Sound: ON</button></div></div>
-
-    <div class="card" style="margin-top:24px">
-      <div class="card-flex">
-        <div>
-          <div class="row-title">Wallet</div>
-          <div class="row-sub" id="wallet-status">Not connected</div>
-        </div>
-        <button class="action-btn" id="wallet-btn" onclick="toggleWallet()">Connect</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-flex"><span class="row-title">Balance</span><span class="reward" id="p-balance">0.0000</span></div>
-      <div class="card-flex"><span class="row-title">≈ TON</span><span class="reward" id="p-balance-ton">0.0000</span></div>
-    </div>
-    <div class="card">
-      <div class="card-flex"><span class="row-title">Level</span><span class="reward" id="p-level">1</span></div>
-    </div>
-    <div class="card">
-      <div class="card-flex"><span class="row-title">Referrals</span><span class="reward" id="p-refs">0</span></div>
-    </div>
-    <div class="card">
-      <div class="row-title">Withdraw</div>
-      <div class="row-sub" style="margin-bottom:10px">Minimum withdrawal: 1000 HMZ. Funds are sent to your wallet.</div>
-      <input type="text" id="withdraw-amount" placeholder="Amount" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;margin-bottom:8px;">
-      <input type="text" id="withdraw-wallet" placeholder="Wallet address" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px 12px;border-radius:10px;font-family:inherit;font-size:13px;margin-bottom:12px;">
-      <button class="action-btn" style="width:100%" onclick="requestWithdraw()">Request Withdraw</button>
-      <div id="wdList" style="margin-top:12px;font-size:13px;opacity:.95"></div>
-      <div class="mine-status" id="withdraw-status" style="margin-top:10px"></div>
-    </div>
-  </section>
-
-  <section class="screen" id="screen-friends">
-    <div class="panel-title">Friends</div>
-    <div class="card">
-      <div class="row-title">Your invite link</div>
-      <div class="row-sub" style="margin-bottom:10px">Every friend who joins through your link earns you a mining bonus</div>
-      <div class="ref-link-box">
-        <input type="text" id="ref-link" readonly value="https://t.me/hermezcoin_bot?start=—">
-        <button class="action-btn" onclick="copyRefLink()">Copy</button>
-      </div>
-    </div>
-    <div class="card card-flex">
-      <span class="row-title">Total referrals</span>
-      <span class="reward" id="ref-count">0</span>
-    </div>
-    <div id="ref-list"></div>
-  </section>
-
-  <section class="screen" id="screen-booster">
-    <div class="panel-title">Booster</div>
-    <div id="booster-list"><div class="row-sub" style="text-align:center">Loading boosters...</div></div>
-  </section>
-
-  <section class="screen" id="screen-miner">
-    <div class="panel-title">Upgrade</div>
-    <div id="miner-list">
-      <div class="row-sub" style="text-align:center">Loading levels...</div>
-    </div>
-  </section>
-
-  <section class="screen" id="screen-tasks">
-    <div class="panel-title">Tasks</div>
-    <div class="card card-flex">
-      <div><div class="row-title">Watch Ad 1</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" id="task-btn-1" onclick="watchAd('monetag_view_1', this)">Watch</button>
-    </div>
-    <div class="card card-flex">
-      <div><div class="row-title">Watch Ad 2</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" id="task-btn-2" onclick="watchAd('monetag_view_2', this)">Watch</button>
-    </div>
-    <div class="card card-flex">
-      <div><div class="row-title">Watch Ad 3</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" id="task-btn-3" onclick="watchAd('monetag_view_3', this)">Watch</button>
-    </div>
-    <div class="card card-flex">
-      <div><div class="row-title">Watch Ad 4</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" id="task-btn-4" onclick="watchAd('monetag_view_4', this)">Watch</button>
-    </div>
-    <div class="card card-flex">
-      <div><div class="row-title">Join our Channel</div><div class="row-sub reward">+5 coins</div></div>
-      <button class="task-btn" id="task-btn-channel" onclick="joinChannelTask(this)">Join</button>
-    </div>
-    <div class="mine-status" id="task-status"></div>
-  </section>
-
-  <nav class="bottom-nav">
-    <button data-screen="profile">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-      Profile
-    </button>
-    <button data-screen="friends">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="8" r="3.2"/><circle cx="16.5" cy="9.5" r="2.6"/><path d="M3 20c0-3.4 2.8-6 6-6s6 2.6 6 6"/><path d="M14.5 14.2c2.6.3 4.5 2.4 4.5 5.3"/></svg>
-      Friends
-    </button>
-    <button data-screen="booster">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>
-      Booster
-    </button>
-    <button data-screen="miner">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 21v-6l7-9 3 3 3-3 3 3-9 9-4-1Z"/><path d="M14 6l4 4"/></svg>
-      Miner
-    </button>
-    <button data-screen="tasks">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.2 2.2L15.5 9.5"/></svg>
-      Tasks
-    </button>
-    <button data-screen="mine" class="active">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M12 9v6"/></svg>
-      Mine
-    </button>
-  </nav>
-
-<script>
 function getTonEquivalent(amount) {
     const rate = 500;
     return (amount / rate).toFixed(4);
@@ -518,20 +134,15 @@ function getTonEquivalent(amount) {
       const senderAddress = tonConnectUI.wallet.account.address;
 
       setTimeout(async () => {
-        try {
-          const result = await apiFetch('/api/booster/activate', {
-            method: 'POST',
-            body: JSON.stringify({ boosterId: id, senderAddress })
-          });
-          if (result.ok) {
-            alert('Booster activated! x' + result.multiplier + ' mining speed.');
-            loadBoosters();
-          } else {
-            alert('Activation failed: ' + (result.reason || 'unknown_error'));
-          }
-        } catch (err) {
-          console.error('booster activation error:', err);
-          alert('Activation request failed: ' + err.message + '. Please try again or contact support with your transaction.');
+        const result = await apiFetch('/api/booster/activate', {
+          method: 'POST',
+          body: JSON.stringify({ boosterId: id, senderAddress })
+        });
+        if (result.ok) {
+          alert('Booster activated! x' + result.multiplier + ' mining speed.');
+          loadBoosters();
+        } else {
+          alert('Activation failed: ' + (result.reason || 'unknown_error'));
         }
       }, 15000);
 
@@ -544,21 +155,6 @@ function getTonEquivalent(amount) {
   function getInitData() {
     return tg && tg.initData ? tg.initData : '';
   }
-
-  async function loadWithdrawals() {
-    try {
-      const r = await apiFetch('/api/my-withdrawals', { method: 'POST', body: '{}' });
-      const el = document.getElementById('wdList');
-      if (!el || !r || !r.items) return;
-      const map = { pending: '⏳ قيد المراجعة', approved: '✅ تم الدفع', paid: '✅ تم الدفع', completed: '✅ تم الدفع', rejected: '❌ مرفوض' };
-      el.innerHTML = r.items.map(function (w) {
-        const t = w.created_at || w.requested_at || w.inserted_at;
-        const d = t ? new Date(t).toLocaleString() : '';
-        return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid #3a2f18"><span>' + w.amount + ' HMZ</span><span>' + (map[w.status] || w.status) + '</span><span style="opacity:.7">' + d + '</span></div>';
-      }).join('');
-    } catch (e) {}
-  }
-  setTimeout(loadWithdrawals, 1500);
 
   async function apiFetch(path, options = {}) {
     const res = await fetch(API_BASE + path, {
@@ -701,7 +297,6 @@ function getTonEquivalent(amount) {
     status.textContent = 'Sending request...'; try { status.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
     try {
       const r = await apiFetch('/api/withdraw', { method: 'POST', body: JSON.stringify({ amount, wallet }) });
-      setTimeout(loadWithdrawals, 800);
       if (r.ok) {
         status.textContent = 'Withdraw request submitted.';
         await loadState();
@@ -912,11 +507,21 @@ function getTonEquivalent(amount) {
   setInterval(refreshTaskButtons, 60000);
 
   function joinChannelTask(btnEl) {
-    window.open('https://t.me/hermezcoin', '_blank');
     const status = document.getElementById('task-status');
-    status.textContent = 'Claiming reward...';
+    if (btnEl.dataset.mode !== 'claim') {
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) {
+        Telegram.WebApp.openTelegramLink('https://t.me/hermezcoin');
+      } else {
+        window.open('https://t.me/hermezcoin', '_blank');
+      }
+      btnEl.dataset.mode = 'claim';
+      btnEl.textContent = 'Claim';
+      status.textContent = 'Join the channel, then come back and press Claim.';
+      return;
+    }
     btnEl.disabled = true;
-    setTimeout(async () => {
+    status.textContent = 'Claiming reward...';
+    (async () => {
       try {
         const r = await apiFetch('/api/ad-reward', {
           method: 'POST',
@@ -936,7 +541,7 @@ function getTonEquivalent(amount) {
         status.textContent = 'Error claiming reward. Try again.';
         btnEl.disabled = false;
       }
-    }, 3000);
+    })();
   }
 
   function watchAd(code, btnEl) {
@@ -972,7 +577,3 @@ function getTonEquivalent(amount) {
       status.textContent = 'Ad was not completed.';
     });
   }
-</script>
-<script async src='//libtl.com/sdk.js' data-zone='11813680' data-sdk='show_11813680'></script>
-</body>
-</html>
