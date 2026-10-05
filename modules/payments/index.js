@@ -166,7 +166,7 @@ async function createWithdrawal(userId, amount, wallet, deductFn, refundFn) {
   const MIN_WITHDRAWAL = 1000;
   if (amount < MIN_WITHDRAWAL) return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
   const st = await mining.getState(userId);
-  if (!st || st.level < 1) return { ok: false, reason: 'level_required', minimum_level: 1 };
+  if (!st || st.level < 2) return { ok: false, reason: 'level_required', minimum_level: 2 };
   const { data: reserve, error: rErr } = await supabase
     .from('reserve_wallet').select('balance').eq('id', 1).single();
   if (rErr) throw rErr;
