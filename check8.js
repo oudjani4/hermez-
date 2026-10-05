@@ -301,7 +301,7 @@ function getTonEquivalent(amount) {
         status.textContent = 'Withdraw request submitted.';
         await loadState();
       } else {
-        const m = { below_minimum: 'Minimum withdrawal is 1000 HMZ.', insufficient_balance: 'Not enough holding balance.', invalid_wallet: 'Invalid wallet address.', invalid_amount: 'Invalid amount.', reserve_insolvent: 'Withdrawals are temporarily unavailable.', try_again: 'Try again.' };
+        const m = { below_minimum: 'Minimum withdrawal is 1000 HMZ.', insufficient_balance: 'Not enough holding balance.', invalid_wallet: 'Invalid wallet address.', invalid_amount: 'Invalid amount.', reserve_insolvent: 'Withdrawals are temporarily unavailable.', level_required: 'You must reach Level 1 to withdraw.', try_again: 'Try again.' };
         status.textContent = m[r.reason] || 'Could not submit request.';
       }
     } catch (e) {

@@ -3,6 +3,7 @@
 // نفس نموذج zoro المُصلَح: reserve wallet + solvency check قبل أي سحب.
 
 const { supabase } = require('../../shared/db');
+const mining = require('../mining');
 
 async function getUpgradeCost(level) {
   const { data, error } = await supabase
@@ -29,6 +30,9 @@ async function requestWithdrawal(userId, amount) {
   if (amount < MIN_WITHDRAWAL) {
     return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
   }
+
+  const st = await mining.getState(userId);
+  if (!st || st.level < 1) return { ok: false, reason: 'level_required', minimum_level: 1 };
 
   const { data: reserve, error: reserveErr } = await supabase
     .from('reserve_wallet')
@@ -59,6 +63,9 @@ async function approveWithdrawal(withdrawalId) {
     .single();
   if (wErr) throw wErr;
   if (w.status !== 'pending') return { ok: false, reason: 'not_pending' };
+
+  const st = await mining.getState(userId);
+  if (!st || st.level < 1) return { ok: false, reason: 'level_required', minimum_level: 1 };
 
   const { data: reserve, error: reserveErr } = await supabase
     .from('reserve_wallet')
@@ -158,6 +165,8 @@ module.exports = { getUpgradeCost, purchaseUpgrade, requestWithdrawal, approveWi
 async function createWithdrawal(userId, amount, wallet, deductFn, refundFn) {
   const MIN_WITHDRAWAL = 1000;
   if (amount < MIN_WITHDRAWAL) return { ok: false, reason: 'below_minimum', minimum: MIN_WITHDRAWAL };
+  const st = await mining.getState(userId);
+  if (!st || st.level < 1) return { ok: false, reason: 'level_required', minimum_level: 1 };
   const { data: reserve, error: rErr } = await supabase
     .from('reserve_wallet').select('balance').eq('id', 1).single();
   if (rErr) throw rErr;
