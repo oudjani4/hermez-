@@ -13,7 +13,7 @@ module.exports = function (app, { auth, adminAuth, adminRoute }) {
 
   app.post('/api/presale/order', auth, async (req, res) => {
     try {
-      const r = await P.createOrder(req.telegramUser.id, Number(req.body.pack), String(req.body.currency || '').toUpperCase());
+      const r = await P.createOrder(req.telegramUser.id, Number(req.body.pack), req.body.wallet);
       if (r.ok) {
         try {
           const tok = process.env.BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
@@ -21,7 +21,7 @@ module.exports = function (app, { auth, adminAuth, adminRoute }) {
             await fetch('https://api.telegram.org/bot' + tok + '/sendMessage', {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ chat_id: process.env.ADMIN_CHAT_ID,
-                text: 'طلب presale جديد\nUser: ' + r.order.user_id + '\n' + r.order.hmz_amount + ' HMZ = ' + r.order.pay_amount + ' ' + r.order.currency + '\nMemo: ' + r.order.memo })
+                text: 'طلب presale جديد\nUser: ' + r.order.user_id + '\n' + r.order.hmz_amount + ' HMZ = ' + r.order.pay_amount + ' TON\nMemo: ' + r.order.memo + '\nWallet: ' + r.order.wallet })
             });
           }
         } catch (e) { console.error('presale notify failed'); }

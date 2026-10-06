@@ -299,68 +299,6 @@
       <div id="wdList" style="margin-top:12px;font-size:13px;opacity:.95"></div>
       <div class="mine-status" id="withdraw-status" style="margin-top:10px"></div>
     </div>
-<div id="presaleCard" style="margin-top:14px;padding:16px;border:1px solid var(--border);border-radius:16px;background:#14100b">
-  <div style="font-size:20px;color:#f0e9d8;margin-bottom:6px">Presale</div>
-  <div class="row-sub" id="ps-info" style="margin-bottom:10px">Loading...</div>
-  <div class="row-sub" id="ps-progress" style="margin-bottom:10px"></div>
-  <input type="text" id="ps-wallet" placeholder="Your TON wallet (to receive HMZ)" style="width:100%;background:#0b0906;border:1px solid var(--border);color:#f0e9d8;padding:10px;border-radius:10px;margin-bottom:8px">
-  <div id="ps-packs"></div>
-  <div id="ps-order" style="margin-top:10px;font-size:13px;word-break:break-all"></div>
-  <div id="ps-list" style="margin-top:12px;font-size:13px;opacity:.95"></div>
-  <div class="row-sub" style="margin-top:10px">We plan to launch the coin once we reach 10,000 users. This is a plan, not a guarantee. Payments are reviewed manually and HMZ is sent to your wallet.</div>
-  <div class="mine-status" id="ps-status" style="margin-top:10px"></div>
-</div>
-<script>
-var PS_MSG = { presale_closed:'The presale is closed.', invalid_pack:'Invalid package.', invalid_wallet:'Invalid wallet address.', too_many_pending:'You have too many pending orders.' };
-function psSet(id, t){ var e=document.getElementById(id); if(e) e.textContent=t; }
-async function loadPresale(){
-  try{
-    var r = await apiFetch('/api/presale/status', { method:'POST', body: JSON.stringify({}) });
-    if(!r || !r.ok){ psSet('ps-info','Presale unavailable.'); return; }
-    var end = new Date(r.endsAt).toISOString().slice(0,10);
-    psSet('ps-info', (r.active ? 'Open until ' : 'Closed. Ended ') + end + '. Pay in TON.');
-    psSet('ps-progress', 'Users: ' + r.users + ' / ' + r.targetUsers);
-    var box = document.getElementById('ps-packs'); box.innerHTML = '';
-    r.packs.forEach(function(p){
-      var b = document.createElement('button');
-      b.className = 'action-btn'; b.style.cssText = 'width:100%;margin-bottom:8px';
-      b.textContent = p.hmz + ' HMZ = ' + p.price + ' TON';
-      b.onclick = function(){ buyPresale(p.hmz); };
-      if(!r.active) b.disabled = true;
-      box.appendChild(b);
-    });
-    loadPresaleOrders();
-  }catch(e){ psSet('ps-info','Presale unavailable.'); }
-}
-async function buyPresale(pack){
-  var w = document.getElementById('ps-wallet').value.trim();
-  psSet('ps-status','Creating order...');
-  try{
-    var r = await apiFetch('/api/presale/order', { method:'POST', body: JSON.stringify({ pack:pack, wallet:w }) });
-    if(!r.ok){ psSet('ps-status', PS_MSG[r.reason] || 'Could not create order.'); return; }
-    var o = r.order, el = document.getElementById('ps-order');
-    el.innerHTML = '';
-    ['Send exactly ' + o.pay_amount + ' TON', 'To: ' + (r.wallet || ''), 'Comment (memo): ' + o.memo, 'We will send your HMZ to your wallet after the payment is reviewed.'].forEach(function(t){ var d=document.createElement('div'); d.style.marginBottom='6px'; d.textContent=t; el.appendChild(d); });
-    psSet('ps-status','Order created. Include the memo in your transfer.');
-    loadPresaleOrders();
-  }catch(e){ psSet('ps-status','Could not create order.'); }
-}
-async function loadPresaleOrders(){
-  try{
-    var r = await apiFetch('/api/presale/mine', { method:'POST', body: JSON.stringify({}) });
-    var el = document.getElementById('ps-list'); el.innerHTML = '';
-    if(!r || !r.ok) return;
-    var icon = { pending:'⏳', approved:'✅', rejected:'❌' };
-    r.orders.forEach(function(o){
-      var d = document.createElement('div'); d.style.marginBottom='4px';
-      d.textContent = o.hmz_amount + ' HMZ  ' + (icon[o.status]||'') + ' ' + o.status + '  ' + new Date(o.created_at).toLocaleString();
-      el.appendChild(d);
-    });
-  }catch(e){}
-}
-setTimeout(loadPresale, 1200);
-</script>
-
   </section>
 
   <section class="screen" id="screen-friends">
