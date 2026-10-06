@@ -62,6 +62,10 @@ input{width:100%;background:#1c1710;color:#f3ead6;border:1px solid #2b2417;borde
 </div>
 </div></div>
 
+<div id="psAdmin" style="margin:16px;padding:14px;border:1px solid #3a2f1a;border-radius:14px">
+<div style="font-size:18px;margin-bottom:8px">Presale Orders</div>
+<button class="btn gold" id="psLoad">Load presale orders</button>
+<div id="psList" style="margin-top:10px"></div></div>
 <script>
 var API='https://hermez-backend.onrender.com';
 var T={
@@ -217,4 +221,25 @@ $('wList').onclick=async function(e){
 
 applyLang();
 if(KEY){loadUsers().then(function(){show(true)}).catch(function(){logout()})}
+var PSO=[];
+function psRender(){
+  var L=PSO.filter(function(o){return o.status==='pending'});
+  if(!L.length){$('psList').innerHTML='<div class="msg">No pending orders</div>';return}
+  $('psList').innerHTML=L.map(function(o){
+    return '<div class="card"><div class="sub">Order #'+esc(o.id)+' | User: '+esc(o.user_id)+'</div>'
+    +'<div class="nm">'+esc(o.hmz_amount)+' HMZ = '+esc(o.pay_amount)+' TON</div>'
+    +'<div class="sub">Memo: '+esc(o.memo)+'</div>'
+    +'<div class="sub" style="word-break:break-all;user-select:all">Wallet: '+esc(o.wallet||'-')+'</div>'
+    +'<div class="sub">'+esc(fd(o.created_at))+'</div>'
+    +'<div class="acts"><button class="btn gold" data-ps="approve" data-id="'+esc(o.id)+'">Approve</button>'
+    +'<button class="btn red" data-ps="reject" data-id="'+esc(o.id)+'">Reject</button></div></div>';
+  }).join('');
+}
+async function psLoad(){var d=await api('/api/admin/presale/orders');PSO=d.orders||[];psRender()}
+$('psLoad').onclick=function(){psLoad().catch(function(){$('psList').innerHTML='<div class="msg">Failed to load</div>'})};
+$('psList').onclick=async function(e){
+  var b=e.target.closest('button[data-ps]');if(!b)return;
+  if(!confirm(b.dataset.ps+' order #'+b.dataset.id+'?'))return;
+  try{await api('/api/admin/presale/'+b.dataset.ps,{id:Number(b.dataset.id)});await psLoad()}catch(x){alert('Failed')}
+};
 </script></body></html>
