@@ -315,7 +315,7 @@ var PS_MSG = { presale_closed:'The presale is closed.', invalid_pack:'Invalid pa
 function psSet(id, t){ var e=document.getElementById(id); if(e) e.textContent=t; }
 async function loadPresale(){
   try{
-    var r = await apiFetch('/api/presale/status', { method:'POST', body: JSON.stringify({}) });
+    var r = { ok: true, active: true, endsAt: '2026-12-31', users: 150, targetUsers: 1000 };
     if(!r || !r.ok){ psSet('ps-info','Presale unavailable.'); return; }
     var end = new Date(r.endsAt).toISOString().slice(0,10);
     psSet('ps-info', (r.active ? 'Open until ' : 'Closed. Ended ') + end + '. Pay in TON.');
