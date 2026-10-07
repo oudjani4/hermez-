@@ -73,3 +73,4 @@ async function claimAdReward(userId, code) {
 }
 
 module.exports = { listActiveTasks, isCompleted, completeTask, claimAdReward };
+
