@@ -240,7 +240,7 @@ function getTonEquivalent(amount) {
     document.getElementById('profile-name').textContent = user.first_name || 'User';
     document.getElementById('profile-avatar').textContent = (user.first_name || 'H')[0].toUpperCase();
     document.getElementById('profile-id').textContent = 'ID: ' + user.id;
-    document.getElementById('ref-link').value = `https://t.me/hermezcoin_bot?start=${user.id}`;
+    document.getElementById('ref-link').value = `admin.html_bot?start=${user.id}`;
   }
 
   function copyRefLink() {
@@ -528,9 +528,9 @@ function getTonEquivalent(amount) {
     const status = document.getElementById('task-status');
     if (btnEl.dataset.mode !== 'claim') {
       if (window.Telegram && Telegram.WebApp && Telegram.WebApp.openTelegramLink) {
-        Telegram.WebApp.openTelegramLink('https://t.me/hermezcoin');
+        Telegram.WebApp.openTelegramLink('admin.html');
       } else {
-        window.open('https://t.me/hermezcoin', '_blank');
+        window.open('admin.html', '_blank');
       }
       btnEl.dataset.mode = 'claim';
       btnEl.textContent = 'Claim';
