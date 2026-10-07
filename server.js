@@ -328,3 +328,13 @@ app.post('/api/presale/status', (req, res) => {
 app.all('/api/presale/status', (req, res) => {
     res.json({ ok: true, status: 'active', success: true });
 });
+
+// Presale Status API Route fix
+app.all('/api/presale/status', (req, res) => {
+    return res.json({ 
+        ok: true, 
+        success: true, 
+        status: 'active', 
+        presale_url: 'https://oudjani4.github.io/hermez-presale/' 
+    });
+});
