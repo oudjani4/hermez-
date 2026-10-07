@@ -169,7 +169,7 @@ app.post('/api/admin/users', adminAuth, adminRoute(() => adminMod.listUsers()));
 app.post('/api/admin/withdrawals', adminAuth, adminRoute(() => adminMod.listWithdrawals()));
 app.post('/api/admin/withdrawal/approve', adminAuth, adminRoute((req) => adminMod.approve(req.body.id)));
 app.post('/api/admin/withdrawal/reject', adminAuth, adminRoute((req) => adminMod.reject(req.body.id)));
-require('./modules/presale_routes')(app, { auth, adminAuth, adminRoute });
+// require.'./modules/presale_routes')(app, { auth, adminAuth, adminRoute });
 app.post('/api/admin/user/add-balance', adminAuth, adminRoute((req) => adminMod.addBalance(req.body.userId, req.body.amount)));
 app.post('/api/admin/user/reset', adminAuth, adminRoute((req) => adminMod.resetUser(req.body.userId)));
 app.post('/api/admin/user/set-level', adminAuth, adminRoute((req) => adminMod.setUserLevel(req.body.userId, req.body.level)));
