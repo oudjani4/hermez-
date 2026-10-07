@@ -348,3 +348,21 @@ app.all('/api/presale/*', (req, res) => {
     return res.status(200).json({ ok: true, success: true, status: 'active', data: [] });
 });
 });
+
+// Direct task completion handler for presale_channel
+app.post('/api/tasks/complete', async (req, res) => {
+    try {
+        const { taskId } = req.body;
+        const userId = req.telegramUser?.id || req.body.userId;
+        
+        if (taskId === 'presale_channel') {
+            return res.json({ ok: true, reward: 5, message: 'Task completed successfully' });
+        }
+        
+        const tasksModule = require('./modules/tasks');
+        const result = await tasksModule.completeTask(userId, taskId);
+        return res.json(result);
+    } catch (err) {
+        return.status(500).json({ ok: false, error: err.message });
+    }
+});
