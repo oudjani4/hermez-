@@ -315,3 +315,11 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`hermez mini app server running on port ${PORT}`);
 });
+
+// مسار حالة البري سيل لتجنب خطأ 404
+app.get('/api/presale/status', (req, res) => {
+    res.json({ ok: true, active: true });
+});
+app.post('/api/presale/status', (req, res) => {
+    res.json({ ok: true, success: true });
+});
