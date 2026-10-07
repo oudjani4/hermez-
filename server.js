@@ -323,3 +323,8 @@ app.get('/api/presale/status', (req, res) => {
 app.post('/api/presale/status', (req, res) => {
     res.json({ ok: true, success: true });
 });
+
+// مسار مؤقت للـ presale status لتلافي خطأ 404
+app.all('/api/presale/status', (req, res) => {
+    res.json({ ok: true, status: 'active', success: true });
+});
