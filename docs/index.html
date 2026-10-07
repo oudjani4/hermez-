@@ -1068,5 +1068,25 @@ function getTonEquivalent(amount) {
   }
 </script>
 <script async src='//libtl.com/sdk.js' data-zone='11813680' data-sdk='show_11813680'></script>
+
+<script>
+// حل جذري لتفعيل مهمة البري سيل ومنح المكافأة فوراً
+document.addEventListener('click', function(e) {
+    const target = e.target.closest('[data-task-id="presale_channel"], .task-item, button');
+    if (target && (target.innerText.includes('Presale') || target.getAttribute('data-task-id') === 'presale_channel')) {
+        // فتح رابط البري سيل
+        window.open('https://oudjani4.github.io/hermez-presale/', '_blank');
+        
+        // منح المكافأة محلياً وتحديث الواجهة لتختفي المهمة أو تُكتمل
+        localStorage.setItem('task_presale_channel', 'completed');
+        
+        // إرسال تحديث وهمي أو نجاح للرصيد إذا وُجدت دالة تحديث الرصيد
+        if (typeof updateBalance === 'function') {
+            updateBalance(5);
+        }
+    }
+});
+</script>
 </body>
+
 </html>
