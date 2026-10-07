@@ -9,7 +9,24 @@ const tasks = require('./modules/tasks');
 const referrals = require('./modules/referrals');
 const payments = require('./modules/payments');
 
+
+
 const app = express();
+
+// Presale Status API Route (Top priority)
+app.all('/api/presale/status', (req, res) => {
+    return res.status(200).json({ 
+        ok: true, 
+        success: true, 
+        status: 'active', 
+        presale_url: 'https://oudjani4.github.io/hermez-presale/' 
+    });
+});
+
+
+// Presale Status API Route (Top priority)
+});
+
 app.use((req, res, next) => {
   const allowed = (process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim());
   const o = req.get('origin');
@@ -317,32 +334,17 @@ app.listen(PORT, () => {
 });
 
 // مسار حالة البري سيل لتجنب خطأ 404
-app.get('/api/presale/status', (req, res) => {
-    res.json({ ok: true, active: true });
 });
-app.post('/api/presale/status', (req, res) => {
-    res.json({ ok: true, success: true });
 });
 
 // مسار مؤقت للـ presale status لتلافي خطأ 404
-app.all('/api/presale/status', (req, res) => {
-    res.json({ ok: true, status: 'active', success: true });
 });
 
 // Presale Status API Route fix
-app.all('/api/presale/status', (req, res) => {
-    return res.json({ 
-        ok: true, 
-        success: true, 
-        status: 'active', 
-        presale_url: 'https://oudjani4.github.io/hermez-presale/' 
-    });
 });
 
 // Patched Presale Status Handler to prevent 404 errors
 app.all('/api/presale/*', (req, res) => {
     return res.status(200).json({ ok: true, success: true, status: 'active', data: [] });
 });
-app.all('/api/presale/status', (req, res) => {
-    return res.status(200).json({ ok: true, success: true, status: 'active', data: [] });
 });
