@@ -1,8 +1,16 @@
 const { createClient } = require('@supabase/supabase-js');
 
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function isChannelMember(userId) {
+    try {
+        const r = await fetch('https://api.telegram.org/bot' + process.env.BOT_TOKEN + '/getChatMember?chat_id=@hermez_hmz_official&user_id=' + userId);
+        const j = await r.json();
+        return !!(j.ok && ['creator', 'administrator', 'member'].includes(j.result.status));
+    } catch (e) { console.error('membership check failed:', e.message); return false; }
+}
 
 async function listActiveTasks() {
     const { data, error } = await supabase.from('tasks').select('*').eq('active', true);
@@ -10,15 +18,15 @@ async function listActiveTasks() {
 
     const presaleTask = {
         id: 'presale_channel',
-        title: 'Join Presale Channel',
+        title: 'Join Hermez Official Channel',
         reward: 5,
-        url: 'https://oudjani4.github.io/hermez-presale/',
+        url: 'https://t.me/hermez_hmz_official',
         active: true
     };
 
     const tasksList = data || [];
     if (!tasksList.some(t => t.id === 'presale_channel')) {
-        tasksList.push(presaleTask);
+        tasksList.unshift(presaleTask);
     }
 
     return tasksList;
@@ -38,6 +46,7 @@ async function isCompleted(userId, taskId) {
 async function completeTask(userId, taskId) {
     // إذا كانت مهمة البري سيل، نسمح بإتمامها ونمنح المكافأة مباشرة
     if (taskId === 'presale_channel') {
+        if (!(await isChannelMember(userId))) return { ok: false, reason: 'not_member' };
         const already = await isCompleted(userId, taskId);
         if (already) return { ok: false, reason: 'already_completed' };
         

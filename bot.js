@@ -118,7 +118,7 @@ bot.on('message', async (ctx) => {
     if (!task) return ctx.reply('المهمة غير موجودة.');
     const result = await tasks.completeTask(ctx.from.id, task.id);
     if (!result.ok) {
-      const reasons = { already_completed: 'أنجزت هذه المهمة من قبل.', task_inactive: 'هذه المهمة غير نشطة.' };
+      const reasons = { already_completed: 'أنجزت هذه المهمة من قبل.', task_inactive: 'هذه المهمة غير نشطة.', not_member: 'انضم إلى القناة أولًا ثم أعد المحاولة.' };
       return ctx.reply(reasons[result.reason] || 'تعذر إتمام المهمة.');
     }
     const newBalance = await mining.addBalance(ctx.from.id, result.reward);
