@@ -222,6 +222,13 @@
   nav.bottom-nav button svg { width: 22px; height: 22px; }
   nav.bottom-nav button.active { color: var(--gold-bright); }
   nav.bottom-nav button.active svg { filter: drop-shadow(0 0 4px rgba(231,197,101,0.5)); }
+.card-presale{background:linear-gradient(135deg,#14246b 0%,#4b1f8f 100%)!important;border:1px solid #6fd3ff!important;animation:pglow 2.4s ease-in-out infinite}
+.card-presale .row-title{color:#fff!important;font-weight:700}
+.card-presale .row-sub{color:#9fe8ff!important}
+.card-presale .task-btn{background:linear-gradient(135deg,#00c6ff,#7a5cff)!important;color:#fff!important;border:0!important;font-weight:700}
+.pbadge{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;background:#ff3d71;color:#fff;font-size:11px;font-weight:700;vertical-align:middle}
+@keyframes pglow{0%,100%{box-shadow:0 0 10px rgba(111,211,255,.25)}50%{box-shadow:0 0 22px rgba(111,211,255,.65)}}
+@media(prefers-reduced-motion:reduce){.card-presale{animation:none}}
 </style>
 <style>#wallet-btn-top{border:2px solid #fff !important;box-shadow:0 4px 18px rgba(0,0,0,.7),0 0 0 3px rgba(47,125,225,.4) !important;} .coin{width:min(60vw,32vh) !important;height:auto !important;}</style>
 <style>#screen-mine{padding-top:44px !important;}</style>
@@ -413,6 +420,10 @@ setTimeout(loadPresale, 1200);
     <div class="card card-flex">
       <div><div class="row-title">Join our Channel</div><div class="row-sub reward">+5 coins</div></div>
       <button class="task-btn" id="task-btn-channel" onclick="joinChannelTask(this)">Join</button>
+    </div>
+    <div class="card card-flex card-presale">
+      <div><div class="row-title">🚀 Presale Bot <span class="pbadge">HOT</span></div><div class="row-sub reward">Join &amp; earn +5 coins</div></div>
+      <button class="task-btn" id="task-btn-official" onclick="officialChannelTask(this)">Join</button>
     </div>
     <div class="mine-status" id="task-status"></div>
   </section>
@@ -985,6 +996,41 @@ function getTonEquivalent(amount) {
   }
   refreshJoinButton();
   setInterval(refreshJoinButton, 60000);
+
+  function officialChannelTask(btnEl) {
+    const status = document.getElementById('task-status');
+    if (btnEl.dataset.step !== 'claim') {
+      window.open('https://t.me/hermez_hmz_official', '_blank');
+      btnEl.dataset.step = 'claim';
+      btnEl.textContent = 'Claim';
+      status.textContent = 'Join the channel, then tap Claim.';
+      return;
+    }
+    btnEl.disabled = true;
+    status.textContent = 'Checking...';
+    apiFetch('/api/tasks/complete', { method: 'POST', body: JSON.stringify({ taskId: 'presale_channel' }) })
+      .then(function (r) {
+        if (r.ok) {
+          btnEl.textContent = 'Done ✅';
+          status.textContent = 'Reward added: ' + r.reward + ' HMZ';
+          if (typeof playCoinSound === 'function') playCoinSound();
+          if (typeof flyCoins === 'function') flyCoins(btnEl);
+        } else if (r.reason === 'already_completed') {
+          btnEl.textContent = 'Done ✅';
+          status.textContent = 'Already claimed.';
+        } else if (r.reason === 'not_member') {
+          status.textContent = 'Join the channel first, then tap Claim again.';
+          btnEl.disabled = false;
+        } else {
+          status.textContent = r.reason || r.error || 'Could not claim reward.';
+          btnEl.disabled = false;
+        }
+      })
+      .catch(function () {
+        status.textContent = 'Error claiming reward. Try again.';
+        btnEl.disabled = false;
+      });
+  }
 
   function joinChannelTask(btnEl) {
     const status = document.getElementById('task-status');
