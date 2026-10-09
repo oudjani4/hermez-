@@ -45,15 +45,35 @@ bot.command('claim', async (ctx) => {
 
 bot.command('tasks', async (ctx) => {
   const list = await tasks.listActiveTasks();
-  const lines = list.map(t => `${t.code} — ${t.reward}`).join('\n');
-  const adTasks = list.filter(t => t.code.startsWith('monetag_'));
-  if (adTasks.length > 0 && process.env.MINI_APP_URL) {
-    return ctx.reply(
-      (lines || 'لا توجد مهام حالياً.') + '\n\nاضغط الزر لمشاهدة الإعلانات:',
-      Markup.inlineKeyboard([Markup.button.webApp('🎬 شاهد الإعلانات', process.env.MINI_APP_URL + '?v=' + Date.now())])
-    );
+  const lines = list.map(t => `${t.code || t.title} — ${t.reward}`).join('\n');
+  const adTasks = list.filter(t => (t.code || '').startsWith('monetag_'));
+  const ch = list.find(t => t.id === 'presale_channel');
+  const rows = [];
+  if (ch) {
+    rows.push([Markup.button.url('📢 Join Hermez Official Channel', ch.url)]);
+    rows.push([Markup.button.callback('✅ I joined (+5 HMZ)', 'check_channel')]);
   }
-  return ctx.reply(lines || 'لا توجد مهام حالياً.');
+  if (adTasks.length > 0 && process.env.MINI_APP_URL) {
+    rows.push([Markup.button.webApp('🎬 شاهد الإعلانات', process.env.MINI_APP_URL + '?v=' + Date.now())]);
+  }
+  const text = (lines || 'لا توجد مهام حالياً.') + (adTasks.length > 0 ? '\n\nاضغط الزر لمشاهدة الإعلانات:' : '');
+  return rows.length ? ctx.reply(text, Markup.inlineKeyboard(rows)) : ctx.reply(text);
+});
+
+bot.action('check_channel', async (ctx) => {
+  try {
+    const result = await tasks.completeTask(ctx.from.id, 'presale_channel');
+    if (!result.ok) {
+      const reasons = { already_completed: 'أنجزت هذه المهمة من قبل.', not_member: 'انضم إلى القناة أولًا ثم أعد المحاولة.' };
+      return ctx.answerCbQuery(reasons[result.reason] || 'تعذر إتمام المهمة.', { show_alert: true });
+    }
+    const newBalance = await mining.addBalance(ctx.from.id, result.reward);
+    await ctx.answerCbQuery();
+    return ctx.reply(`✅ +${result.reward} HMZ\nرصيدك الآن: ${Number(newBalance).toFixed(4)}`);
+  } catch (e) {
+    console.error('check_channel error:', e);
+    return ctx.answerCbQuery('حدث خطأ.', { show_alert: true });
+  }
 });
 
 bot.command('profile', async (ctx) => {
